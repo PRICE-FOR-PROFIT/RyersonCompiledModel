@@ -4,18 +4,18 @@ from api.route.home import home_api
 
 
 def create_app():
-    app = Flask(__name__)
+    flask_app = Flask(__name__)
 
-    app.config['SWAGGER'] = {
+    flask_app.config['SWAGGER'] = {
         'title': 'Ryerson Compiled Model',
     }
-    swagger = Swagger(app)
+    swagger = Swagger(flask_app)
 
     # Initialize Config
-    app.config.from_pyfile('config.py')
-    app.register_blueprint(home_api, url_prefix='/api')
+    flask_app.config.from_pyfile('config.py')
+    flask_app.register_blueprint(home_api, url_prefix='/api')
 
-    return app
+    return flask_app
 
 
 if __name__ == '__main__':

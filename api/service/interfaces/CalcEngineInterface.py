@@ -8,6 +8,6 @@ class CalcEngineInterface(metaclass=abc.ABCMeta):
                 callable(subclass.execute_model))
 
     @abc.abstractmethod
-    def execute_model(self, client_id, model, model_input, calculation_id):
+    def execute_model(self, json_data: str, calculation_id: str) -> str:
         """Execute the model"""
         raise NotImplementedError('users must define execute_model to use this base class')
