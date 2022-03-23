@@ -1,0 +1,17 @@
+class TmAdjustmentModel:
+    def __init__(self):
+        self.unique_id = ""
+        self.multi_market_name = ""
+        self.product = ""
+        self.form = ""
+        self.weight_class_1 = ""
+        self.weight_class_200 = ""
+        self.weight_class_500 = ""
+        self.weight_class_1000 = ""
+        self.weight_class_2000 = ""
+        self.weight_class_5000 = ""
+        self.weight_class_6500 = ""
+        self.weight_class_10000 = ""
+        self.weight_class_20000 = ""
+        self.weight_class_24000 = ""
+        self.weight_class_40000 = ""

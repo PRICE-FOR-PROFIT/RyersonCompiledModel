@@ -1,0 +1,15 @@
+class CustomerModel:
+    def __init__(self):
+        self.unique_id = ""
+        self.customer_number = ""
+        self.sap_ind = ""
+        self.multi_market_name = ""
+        self.customer_sales_office = ""
+        self.isr_office = ""
+        self.customer_name = ""
+        self.rc_mapping = ""
+        self.dso = ""
+        self.waive_skid = ""
+        self.dso_adder = ""
+        self.percent_adder = ""
+        self.dollar_adder = ""

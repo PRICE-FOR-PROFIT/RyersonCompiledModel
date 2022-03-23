@@ -1,19 +1,23 @@
 from flask import Flask
+from flask_restful import Api
 from flasgger import Swagger
-from api.route.home import home_api
+from api.resources.routes import initialize_routes
 
 
 def create_app():
     flask_app = Flask(__name__)
+    api = Api(flask_app)
 
     flask_app.config['SWAGGER'] = {
         'title': 'Ryerson Compiled Model',
     }
-    swagger = Swagger(flask_app)
+
+    Swagger(flask_app)
 
     # Initialize Config
     flask_app.config.from_pyfile('config.py')
-    flask_app.register_blueprint(home_api, url_prefix='/api')
+
+    initialize_routes(api)
 
     return flask_app
 

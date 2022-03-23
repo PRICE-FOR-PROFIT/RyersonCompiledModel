@@ -1,4 +1,5 @@
 import abc
+from typing import Any
 
 
 class CalcEngineInterface(metaclass=abc.ABCMeta):
@@ -8,6 +9,6 @@ class CalcEngineInterface(metaclass=abc.ABCMeta):
                 callable(subclass.execute_model))
 
     @abc.abstractmethod
-    def execute_model(self, json_data: str, calculation_id: str) -> str:
+    def execute_model(self, json_data: dict[str, Any], calculation_id: str) -> dict[str, Any]:
         """Execute the model"""
         raise NotImplementedError('users must define execute_model to use this base class')

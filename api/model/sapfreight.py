@@ -1,0 +1,18 @@
+class SapFreightModel:
+    def __init__(self):
+        self.unique_id = ""
+        self.ship_plant = ""
+        self.zip_code = ""
+        self.weight_class_0 = ""
+        self.weight_class_1 = ""
+        self.weight_class_200 = ""
+        self.weight_class_500 = ""
+        self.weight_class_1000 = ""
+        self.weight_class_2000 = ""
+        self.weight_class_5000 = ""
+        self.weight_class_6500 = ""
+        self.weight_class_10000 = ""
+        self.weight_class_20000 = ""
+        self.weight_class_24000 = ""
+        self.weight_class_40000 = ""
+        self.minimum_freight_charge = ""
