@@ -71,11 +71,27 @@ class CalculationApi(Resource):
 
             return ErrorWrapperWithMetaSchema().dump(output), HTTPStatus.NOT_FOUND
 
+        debug_header = request.headers.get("x-insight-debug")
+
+        is_debug_header_set = False if debug_header is None else debug_header.casefold() == "true".casefold()
+
+        # var scopes = new
+        # List < string > ();
+        # var azureB2CScopes = HttpContext.User.Claims.FirstOrDefault(c= > c.Type == "http://schemas.microsoft.com/identity/claims/scope")?.Value;
+        # if (!string.IsNullOrWhiteSpace(azureB2CScopes)) scopes.AddRange(azureB2CScopes.Split(" "));
+        # var insightClaims = HttpContext.User.Claims.FirstOrDefault(c= > c.Type == "InsightClaims")?.Value;
+        # if (!string.IsNullOrWhiteSpace(insightClaims)) scopes.AddRange(insightClaims.Split(" "));
+        # scopes = scopes.Distinct().ToList();
+        # var hasDebugPermissions = HttpContext.User.IsInRole("ces.global.debug") | | scopes.Contains("ces.global.debug");
+
         metadata = {"calculationid": calculation_id}
 
         payload = request.get_json()
 
-        result = {"name": "John", "age": 30, "city": "New York"}
+        if "InputParameters" in payload:
+            pass
+
+        result = [{"name": "John", "value": 30}]
 
         output = {"data": result, "metadata": metadata}
 

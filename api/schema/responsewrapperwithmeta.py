@@ -7,5 +7,5 @@ class ResponseWrapperWithMetaSchema(Schema):
         # Fields to expose
         fields = ["data", "metadata"]
 
-    data = Dict()
+    data = [Dict()]
     metadata = Dict()
