@@ -1,3 +1,4 @@
+import http.client
 import json
 from uuid import uuid4
 from flask import request
@@ -7,6 +8,7 @@ from http import HTTPStatus
 from api.schema.responsewrapperwithmeta import ResponseWrapperWithMetaSchema
 from api.schema.errorwrapperwithmeta import ErrorWrapperWithMetaSchema
 from api.service.authenticationhelper import AuthenticationHelper
+from api.model.calculationoutput import CalculationOutput
 
 
 def lower_keys(data):
@@ -64,6 +66,83 @@ def extract_properties_to_include_in_response(data: dict) -> [str]:
         return ""
 
 
+def convert_json_to_calculation_output(obj: {}) -> [{}]:
+    output = list()
+
+    for key, value in obj.items():
+        if isinstance(value, list):
+            o = CalculationOutput()
+
+            o.Name = key
+            o.Passthrough = True
+            o.Value = convert_list_to_output_list(value)
+
+            output.append(o)
+        else:
+            o = CalculationOutput()
+
+            o.Name = key
+            o.Passthrough = True
+            o.Value = value
+
+            output.append(o)
+
+    return output
+
+
+def convert_list_to_output_list(arr: list) -> list:
+    output = list()
+
+    for line in arr:
+        line_data = list()
+
+        for key, value in line.items():
+            val = {}
+
+            if isinstance(value, list):
+                val = convert_list_to_output_list(value)
+            else:
+                val = value
+
+            calc = CalculationOutput()
+
+            calc.Name = key
+            calc.Passthrough = True
+            calc.Value = val
+
+            line_data.append(calc)
+
+        output.append(line_data)
+
+    return output
+
+
+def convert_calculation_outputs_to_array(outputs: list) -> list:
+    arr_data = list()
+
+    for output_item in outputs:
+        line = {}
+
+        name = output_item.Name
+        passthrough = output_item.Passthrough
+
+        if isinstance(output_item.Value, list):
+            all_lines = list()
+
+            for item in output_item.Value:
+                value = convert_calculation_outputs_to_array(item)
+
+                all_lines.append(value)
+
+            line = {"name": name, "passthrough": passthrough, "value": all_lines}
+        else:
+            line = {"name": name, "passthrough": passthrough, "value": output_item.Value}
+
+        arr_data.append(line)
+
+    return arr_data
+
+
 class CalculationApi(Resource):
     @swag_from({
         'parameters': [
@@ -107,6 +186,11 @@ class CalculationApi(Resource):
 
         calculation_id = request.headers.get("x-insight-calculationid")
 
+        # REM create request telemetry
+        # var requestTelemetry = HttpContext.Features.Get < RequestTelemetry > ();
+        #
+        # requestTelemetry?.Properties.Add("CalculationId", calculationId);
+
         if not calculation_id:
             calculation_id = uuid4().hex
 
@@ -114,6 +198,7 @@ class CalculationApi(Resource):
             error_info = f"Model not found for clientId: {client_id}, modelId: {model_id}"
 
             ex = Exception(error_info)
+            # REM _telemetry.TrackTrace(errorInfo, SeverityLevel.Error);
 
             output = generate_error_wrapper_with_meta(HTTPStatus.NOT_FOUND, error_info, calculation_id)
 
@@ -146,16 +231,64 @@ class CalculationApi(Resource):
                 calculation_inputs["modelinputs"] = converted_inputs
                 calculation_inputs["includeinresponse"] = properties
             except Exception as ex:
+                # REM _telemetry.TrackTrace(ex.Message, SeverityLevel.Error);
                 error_info = f"Error evaluating model: {model_id}"
-
-                ex = Exception(error_info)
 
                 output = generate_error_wrapper_with_meta(HTTPStatus.NOT_FOUND, error_info, calculation_id)
 
                 return ErrorWrapperWithMetaSchema().dump(output), HTTPStatus.BAD_REQUEST
 
-        result = [{"name": "John", "value": 30}]
+        if calculation_inputs["modelinputs"] is None:
+            payload_error_info = "Input payload not structured correctly, neither property 'InputParameters' or 'modelInput' is not set."
 
-        output = {"data": result, "metadata": metadata}
+            # ex = Exception(payload_error_info)
 
-        return ResponseWrapperWithMetaSchema().dump(output), HTTPStatus.OK
+            # REM _telemetry.TrackTrace(ex.Message, SeverityLevel.Error);
+
+            output = generate_error_wrapper_with_meta(HTTPStatus.BAD_REQUEST, payload_error_info, calculation_id)
+
+            return ErrorWrapperWithMetaSchema().dump(output), http.client.BAD_REQUEST
+
+        json_output = {}
+
+        try:
+            if model_id.casefold() == "recommendedPrice".casefold():
+                json_output = {"quoteLines": [{"itemNumber": "000010", "recommendedPricePerPound": "9.801"}]}
+            else:
+                json_output = {"quoteLines": [{"itemNumber": "000010", "recommendedPricePerPound": "9.801"}]}
+
+            # Collect all the outputs from the calc engine into the output dictionary
+            output_dictionary = {k: json.dumps(v) for (k, v) in json_output.items()}
+
+            output_dictionary["AuthorizationClientId"] = authenticated_client_id
+            output_dictionary["ModelClientId"] = client_id
+
+            calc_info = f"Calculation performed, {len(json_output)} output(s) returned."
+
+            # telemetry.TrackTrace
+
+        # parameter type exception
+        # _telemetry.TrackTrace(ex.Message, SeverityLevel.Error);
+        # symbol not found exception
+        # _telemetry.TrackTrace(ex.Message, SeverityLevel.Error);
+        # masked exception
+        # _telemetry.TrackTrace(ex.Message, SeverityLevel.Error);
+        except Exception as ex:
+            # REM _telemetry.TrackTrace(ex.Message, SeverityLevel.Error);
+
+            error = f"Error evaluating model: {model_id}. {ex}"
+
+            output = generate_error_wrapper_with_meta(HTTPStatus.BAD_REQUEST, error, calculation_id)
+
+            return ErrorWrapperWithMetaSchema().dump(output), http.client.BAD_REQUEST
+
+        if calculation_inputs["inputparameters"] is not None:
+            converted_output = convert_json_to_calculation_output(json_output)
+
+            data = convert_calculation_outputs_to_array(converted_output)
+        else:
+            data = json_output
+
+        response = {"data": data, "metadata": metadata}
+
+        return ResponseWrapperWithMetaSchema().dump(response), HTTPStatus.OK
