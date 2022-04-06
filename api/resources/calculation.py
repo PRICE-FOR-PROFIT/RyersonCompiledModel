@@ -9,7 +9,10 @@ from api.schema.responsewrapperwithmeta import ResponseWrapperWithMetaSchema
 from api.schema.errorwrapperwithmeta import ErrorWrapperWithMetaSchema
 from api.service.authenticationhelper import AuthenticationHelper
 from api.model.calculationoutput import CalculationOutput
-
+from api.model.model import ModelModel
+from api.model.parameter import ParameterModel
+from api.service.recommendedprice import RecommendedPrice
+from api.service.quotelinesap import QuoteLineSap
 
 def lower_keys(data):
     if isinstance(data, list):
@@ -143,6 +146,51 @@ def convert_calculation_outputs_to_array(outputs: list) -> list:
     return arr_data
 
 
+def get_model(model_id: str, debug_mode: bool) -> ModelModel:
+    model = ModelModel()
+
+    if model_id.casefold() == "recommendedprice":
+        model.name = "RecommendedPrice"
+        model.calculations = []
+        model.debug_mode = debug_mode
+        model.model_inputs = []
+        model.version = 3
+        model.is_active = True
+        model.id = "RecommendedPrice"
+
+        model.model_inputs.append(ParameterModel("quoteLines", "array", True, None))
+        model.model_inputs.append(ParameterModel("customerId", "string", True, None))
+        model.model_inputs.append(ParameterModel("shipToZipCode", "string", False, ""))
+        model.model_inputs.append(ParameterModel("shipToState", "string", False, ""))
+        model.model_inputs.append(ParameterModel("salesOffice", "string", False, "NA"))
+        model.model_inputs.append(ParameterModel("independentCalculationFlag", "bool", False, "False"))
+        model.model_inputs.append(ParameterModel("automatedTuningGroupOverride", "string", False, ""))
+        model.model_inputs.append(ParameterModel("automatedTuningFlagOverride", "string", False, ""))
+    else:
+        model.name = "quoteLineSAP"
+        model.calculations = []
+        model.debug_mode = debug_mode
+        model.model_inputs = []
+        model.version = 40
+        model.is_active = True
+        model.id = "quoteLineSAP"
+
+        model.model_inputs.append(ParameterModel("material", "string", True, None))
+        model.model_inputs.append(ParameterModel("itemNumber", "string", True, None))
+        model.model_inputs.append(ParameterModel("shipPlant", "string", False, None))
+        model.model_inputs.append(ParameterModel("stockPlant", "string", True, None))
+        model.model_inputs.append(ParameterModel("weight", "double", True, None))
+        model.model_inputs.append(ParameterModel("opCode", "string", False, ""))
+        model.model_inputs.append(ParameterModel("netWeightOfSalesItem", "double", False, "-1.0"))
+        model.model_inputs.append(ParameterModel("netWeightPerFinishedPiece", "double", False, "0.0"))
+        model.model_inputs.append(ParameterModel("bundles", "int", False, "-1"))
+        model.model_inputs.append(ParameterModel("totalQuotePounds", "double", True, None))
+        model.model_inputs.append(ParameterModel("automatedTuningGroupOverride", "string", False, ""))
+        model.model_inputs.append(ParameterModel("automatedTuningFlagOverride", "string", False, ""))
+
+    return model
+
+
 class CalculationApi(Resource):
     @swag_from({
         'parameters': [
@@ -216,6 +264,7 @@ class CalculationApi(Resource):
         # if (!string.IsNullOrWhiteSpace(insightClaims)) scopes.AddRange(insightClaims.Split(" "));
         # scopes = scopes.Distinct().ToList();
         # var hasDebugPermissions = HttpContext.User.IsInRole("ces.global.debug") | | scopes.Contains("ces.global.debug");
+        has_debug_permissions = True
 
         metadata = {"calculationid": calculation_id}
 
@@ -249,13 +298,19 @@ class CalculationApi(Resource):
 
             return ErrorWrapperWithMetaSchema().dump(output), http.client.BAD_REQUEST
 
-        json_output = {}
-
         try:
             if model_id.casefold() == "recommendedPrice".casefold():
-                json_output = {"quoteLines": [{"itemNumber": "000010", "recommendedPricePerPound": "9.801"}]}
+                model = get_model(model_id, is_debug_header_set and has_debug_permissions)
+
+                recommended_price_model = RecommendedPrice()
+
+                json_output = recommended_price_model.execute_model(authenticated_client_id, client_id, model, calculation_inputs, calculation_id)
             else:
-                json_output = {"quoteLines": [{"itemNumber": "000010", "recommendedPricePerPound": "9.801"}]}
+                model = get_model(model_id, is_debug_header_set and has_debug_permissions)
+
+                quote_line_sap = QuoteLineSap()
+
+                json_output = quote_line_sap.execute_model(authenticated_client_id, client_id, model, calculation_inputs, calculation_id)
 
             # Collect all the outputs from the calc engine into the output dictionary
             output_dictionary = {k: json.dumps(v) for (k, v) in json_output.items()}
