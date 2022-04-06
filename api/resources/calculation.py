@@ -2,6 +2,7 @@ import http.client
 import json
 from uuid import uuid4
 from flask import request
+from flask import current_app
 from flask_restful import Resource
 from flasgger import swag_from
 from http import HTTPStatus
@@ -13,6 +14,9 @@ from api.model.model import ModelModel
 from api.model.parameter import ParameterModel
 from api.service.recommendedprice import RecommendedPrice
 from api.service.quotelinesap import QuoteLineSap
+from api.service.sqllitelookupservice import SqlLiteLookupService
+from api.service.queuedlogger import QueuedLogger
+
 
 def lower_keys(data):
     if isinstance(data, list):
@@ -302,15 +306,18 @@ class CalculationApi(Resource):
             if model_id.casefold() == "recommendedPrice".casefold():
                 model = get_model(model_id, is_debug_header_set and has_debug_permissions)
 
-                recommended_price_model = RecommendedPrice()
+                lookup_service = SqlLiteLookupService()
+                queued_logger = QueuedLogger()
+                quote_line_sap = QuoteLineSap()
+                recommended_price_model = RecommendedPrice(lookup_service, queued_logger, current_app.config, quote_line_sap)
 
-                json_output = recommended_price_model.execute_model(authenticated_client_id, client_id, model, calculation_inputs, calculation_id)
+                json_output = recommended_price_model.execute_model(authenticated_client_id, client_id, model, calculation_inputs, calculation_id, token)
             else:
                 model = get_model(model_id, is_debug_header_set and has_debug_permissions)
 
                 quote_line_sap = QuoteLineSap()
 
-                json_output = quote_line_sap.execute_model(authenticated_client_id, client_id, model, calculation_inputs, calculation_id)
+                json_output = quote_line_sap.execute_model(authenticated_client_id, client_id, model, calculation_inputs, calculation_id, token)
 
             # Collect all the outputs from the calc engine into the output dictionary
             output_dictionary = {k: json.dumps(v) for (k, v) in json_output.items()}
