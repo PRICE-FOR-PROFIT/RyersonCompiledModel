@@ -1,5 +1,5 @@
-class CalculationOutputModel:
+class CalculationInputModel:
     def __init__(self):
         self.Name = ""
-        self.Passthrough = False
+        self.ReturnInOutput = False
         self.Value = ""

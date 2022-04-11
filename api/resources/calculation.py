@@ -2,14 +2,14 @@ import http.client
 import json
 from uuid import uuid4
 from flask import request
-from flask import current_app
 from flask_restful import Resource
 from flasgger import swag_from
 from http import HTTPStatus
+from config import Config
 from api.schema.responsewrapperwithmeta import ResponseWrapperWithMetaSchema
 from api.schema.errorwrapperwithmeta import ErrorWrapperWithMetaSchema
 from api.service.authenticationhelper import AuthenticationHelper
-from api.model.calculationoutput import CalculationOutput
+from api.model.calculationoutput import CalculationOutputModel
 from api.model.model import ModelModel
 from api.model.parameter import ParameterModel
 from api.service.recommendedprice import RecommendedPrice
@@ -27,7 +27,7 @@ def lower_keys(data):
         return data
 
 
-def generate_error_wrapper_with_meta(code: str, description: str, calculation_id: str) -> dict:
+def generate_error_wrapper_with_meta(code: int, description: str, calculation_id: str) -> dict:
     metadata = {"calculationIid": calculation_id}
 
     error = {"responseCode": code, "description": description}
@@ -78,7 +78,7 @@ def convert_json_to_calculation_output(obj: {}) -> [{}]:
 
     for key, value in obj.items():
         if isinstance(value, list):
-            o = CalculationOutput()
+            o = CalculationOutputModel()
 
             o.Name = key
             o.Passthrough = True
@@ -86,7 +86,7 @@ def convert_json_to_calculation_output(obj: {}) -> [{}]:
 
             output.append(o)
         else:
-            o = CalculationOutput()
+            o = CalculationOutputModel()
 
             o.Name = key
             o.Passthrough = True
@@ -111,7 +111,7 @@ def convert_list_to_output_list(arr: list) -> list:
             else:
                 val = value
 
-            calc = CalculationOutput()
+            calc = CalculationOutputModel()
 
             calc.Name = key
             calc.Passthrough = True
@@ -280,8 +280,8 @@ class CalculationApi(Resource):
 
                 properties = extract_properties_to_include_in_response(input_data)
                 converted_inputs = [transform_input_list_object_array(input_data)]
-                
-                calculation_inputs["modelinputs"] = converted_inputs
+
+                calculation_inputs["modelinputs"] = converted_inputs[0]
                 calculation_inputs["includeinresponse"] = properties
             except Exception as ex:
                 # REM _telemetry.TrackTrace(ex.Message, SeverityLevel.Error);
@@ -309,7 +309,7 @@ class CalculationApi(Resource):
                 lookup_service = SqlLiteLookupService()
                 queued_logger = QueuedLogger()
                 quote_line_sap = QuoteLineSap()
-                recommended_price_model = RecommendedPrice(lookup_service, queued_logger, current_app.config, quote_line_sap)
+                recommended_price_model = RecommendedPrice(lookup_service, queued_logger, Config, quote_line_sap)
 
                 json_output = recommended_price_model.execute_model(authenticated_client_id, client_id, model, calculation_inputs, calculation_id, token)
             else:
