@@ -108,7 +108,41 @@ class RecommendedPrice(CalcEngineInterface):
 
                 quote_line_sap_model = model_service.get_model("quotelinesap", debug_mode)
 
-            calculation_results = {"modelId": "bob", "quoteLines": [{"itemNumber": "000010", "recommendedPricePerPound": "9.801"}]}
+                quote_lines = list()
+
+                if self._fan_out:
+                    for line_input in quote_line_input:
+                        quote_lines.append({"modelId": "bob"})
+                        # execute sub model
+                else:
+                    for line_input in quote_line_input:
+                        quote_lines.append({"modelId": "bob"})
+                        # execute sub model
+
+                calculation_results["quoteLines"] = quote_lines
+
+                intermediate_calcs["totalQuotePounds"] = total_quote_pounds
+                intermediate_calcs["customerWithOfficeKey"] = customer_with_office_key
+                if customer_with_office_info is not None:
+                    intermediate_calcs["customerWithOfficeInfo"] = customer_with_office_info
+
+                if customer_without_office_info is not None:
+                    intermediate_calcs["customerWithoutOfficeInfo"] = customer_without_office_info
+
+                if default_office_info is not None:
+                    intermediate_calcs["defaultOfficeInfo"] = default_office_info
+
+                intermediate_calcs["customerInfo"] = customer_info
+                intermediate_calcs["customerName"] = customer_name
+                intermediate_calcs["rcMapping"] = rc_mapping
+                intermediate_calcs["multiMarket"] = multi_market
+                intermediate_calcs["customerSalesOffice"] = customer_sales_office
+                intermediate_calcs["sapInd"] = sap_ind
+                intermediate_calcs["isrOffice"] = isr_office
+                intermediate_calcs["dsoAdder"] = dso_adder
+                intermediate_calcs["quoteLines"] = quote_lines
+
+                log_information.intermediate_calculations = intermediate_calcs
         except BreakError as ex:
             # telemetry track exception
 
