@@ -1,0 +1,2 @@
+class BreakError(Exception):
+    pass

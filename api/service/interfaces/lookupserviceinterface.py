@@ -1,4 +1,6 @@
 import abc
+from typing import Optional
+
 from api.model.customer import CustomerModel
 from api.model.product import ProductModel
 from api.model.packagingcost import PackagingCostModel
@@ -44,87 +46,87 @@ class LookupServiceInterface(metaclass=abc.ABCMeta):
                 (hasattr(subclass, 'lookup_location_group') and callable(subclass.lookup_location_group)))
 
     @abc.abstractmethod
-    def lookup_customer(self, client_id: str, customer_id: str, label: str, default_value: CustomerModel) -> CustomerModel:
+    def lookup_customer(self, client_id: str, table_id: str, label: str, default_value: Optional[CustomerModel]) -> CustomerModel:
         """Locate a customer object by id"""
         pass
 
     @abc.abstractmethod
-    def lookup_product(self, client_id: str, product_id: str, label: str, default_value: ProductModel) -> ProductModel:
+    def lookup_product(self, client_id: str, table_id: str, label: str, default_value: Optional[ProductModel]) -> ProductModel:
         """Locate a product by id"""
         pass
 
     @abc.abstractmethod
-    def lookup_packaging_cost(self, client_id: str, packaging_cost_id: str, label: str, default_value: PackagingCostModel) -> PackagingCostModel:
+    def lookup_packaging_cost(self, client_id: str, table_id: str, label: str, default_value: Optional[PackagingCostModel]) -> PackagingCostModel:
         """Locate packaging cost by id"""
         pass
 
     @abc.abstractmethod
-    def lookup_mill_to_plant_freight(self, client_id: str, plant_id: str, label: str, default_value: MillToPlantFreightModel) -> MillToPlantFreightModel:
+    def lookup_mill_to_plant_freight(self, client_id: str, table_id: str, label: str, default_value: Optional[MillToPlantFreightModel]) -> MillToPlantFreightModel:
         """Locate mill to plant freight cost by id"""
         pass
 
     @abc.abstractmethod
-    def lookup_tm_adjustment(self, client_id: str, adjustment_id: str, label: str, default_value: TmAdjustmentModel) -> TmAdjustmentModel:
+    def lookup_tm_adjustment(self, client_id: str, table_id: str, label: str, default_value: Optional[TmAdjustmentModel]) -> TmAdjustmentModel:
         """Locate tm adjustment by id"""
         pass
 
     @abc.abstractmethod
-    def lookup_material_sales_office(self, client_id: str, sales_office_id: str, label: str, default_value: MaterialSalesOfficeModel) -> MaterialSalesOfficeModel:
+    def lookup_material_sales_office(self, client_id: str, table_id: str, label: str, default_value: Optional[MaterialSalesOfficeModel]) -> MaterialSalesOfficeModel:
         """Locate the material sales office by id"""
         pass
 
     @abc.abstractmethod
-    def lookup_sap_freight(self, client_id, sap_id: str, label: str, default_value: SapFreightModel) -> SapFreightModel:
+    def lookup_sap_freight(self, client_id, table_id: str, label: str, default_value: Optional[SapFreightModel]) -> SapFreightModel:
         """Locate the sap freight by sap id"""
         pass
 
     @abc.abstractmethod
-    def lookup_south_skid_charge(self, client_id: str, skid_id: str, label: str, default_value: SouthSkidChargeModel) -> SouthSkidChargeModel:
+    def lookup_south_skid_charge(self, client_id: str, table_id: str, label: str, default_value: Optional[SouthSkidChargeModel]) -> SouthSkidChargeModel:
         """Located the south skid charge by id"""
         pass
 
     @abc.abstractmethod
-    def lookup_south_freight(self, client_id: str, freight_id: str, label: str, default_value: SouthFreightModel) -> SouthFreightModel:
+    def lookup_south_freight(self, client_id: str, table_id: str, label: str, default_value: Optional[SouthFreightModel]) -> SouthFreightModel:
         """Locate the south freight by id"""
         pass
 
     @abc.abstractmethod
-    def lookup_ship_zone(self, client_id: str, ship_id: str, label: str, default_value: ShipZoneModel) -> ShipZoneModel:
+    def lookup_ship_zone(self, client_id: str, table_id: str, label: str, default_value: Optional[ShipZoneModel]) -> ShipZoneModel:
         """Locate the ship zone by id"""
         pass
 
     @abc.abstractmethod
-    def lookup_so_bw_floor_price(self, client_id: str, so_bw_id: str, label: str, default_value: SoBwFloorPriceModel) -> SoBwFloorPriceModel:
+    def lookup_so_bw_floor_price(self, client_id: str, table_id: str, label: str, default_value: Optional[SoBwFloorPriceModel]) -> SoBwFloorPriceModel:
         """Locate the sobw by id"""
         pass
 
     @abc.abstractmethod
-    def lookup_bw_rating(self, client_id: str, bw_id: str, label: str, default_value: BwRatingModel) -> BwRatingModel:
+    def lookup_bw_rating(self, client_id: str, table_id: str, label: str, default_value: Optional[BwRatingModel]) -> BwRatingModel:
         """Locate the bw rating by id"""
         pass
 
     @abc.abstractmethod
-    def lookup_freight_default(self, client_id: str, freight_id: str, label: str, default_value: FreightDefaultModel) -> FreightDefaultModel:
+    def lookup_freight_default(self, client_id: str, table_id: str, label: str, default_value: Optional[FreightDefaultModel]) -> FreightDefaultModel:
         """Locate the freight default by id"""
         pass
 
     @abc.abstractmethod
-    def lookup_target_margin(self, client_id: str, margin_id: str, label: str, default_value: float) -> float:
+    def lookup_target_margin(self, client_id: str, table_id: str, label: str, default_value: Optional[float]) -> float:
         """Locate the target margin by id"""
         pass
 
     @abc.abstractmethod
-    def lookup_cl_code(self, client_id: str, cl_code_id: str, label: str, default_value: ClCodeModel) -> ClCodeModel:
+    def lookup_cl_code(self, client_id: str, table_id: str, label: str, default_value: Optional[ClCodeModel]) -> ClCodeModel:
         """Locate the cl code by id"""
         pass
 
     @abc.abstractmethod
-    def lookup_ido(self, client_id: str, ido_id: str, label: str, default_value: IdoModel) -> IdoModel:
+    def lookup_ido(self, client_id: str, table_id: str, label: str, default_value: Optional[IdoModel]) -> IdoModel:
         """Locate the ido by id"""
         pass
 
     @abc.abstractmethod
-    def bucketed_lookup(self, client_id: str, item_id: str, val: float, column: str) -> str:
+    def bucketed_lookup(self, client_id: str, table_id: str, val: float, column: str) -> str:
         """Locate a row by the bucket it belongs to"""
         pass
 
@@ -139,11 +141,11 @@ class LookupServiceInterface(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def lookup_automated_tuning(self, client_id: str, tuning_id: str, label: str, default_value: AutomatedTuningModel) -> AutomatedTuningModel:
+    def lookup_automated_tuning(self, client_id: str, table_id: str, label: str, default_value: Optional[AutomatedTuningModel]) -> AutomatedTuningModel:
         """Locate the automated tuning record by id"""
         pass
 
     @abc.abstractmethod
-    def lookup_location_group(self, client_id: str, group_id: str, label: str, default_value: LocationGroupModel) -> LocationGroupModel:
+    def lookup_location_group(self, client_id: str, table_id: str, label: str, default_value: Optional[LocationGroupModel]) -> LocationGroupModel:
         """Locate the location group by id"""
         pass

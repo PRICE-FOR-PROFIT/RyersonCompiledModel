@@ -1,0 +1,2 @@
+class ArgumentNullError(Exception):
+    pass
