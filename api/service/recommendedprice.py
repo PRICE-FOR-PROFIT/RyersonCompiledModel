@@ -8,6 +8,7 @@ from api.exceptions.breakerror import BreakError
 from api.exceptions.dividebyzeroerror import DivideByZeroError
 from api.service.calculationhelper import CalculationHelper
 from api.service.modelservice import ModelService
+from api.service.quotelinesap import QuoteLineSap
 from config import Config
 from api.exceptions.symbolnotfounderror import SymbolNotFoundError
 from api.service.interfaces.calcengineinterface import CalcEngineInterface
@@ -25,12 +26,15 @@ class RecommendedPrice(CalcEngineInterface):
         self._disable_logging = configuration.disable_Logging
         self._namespace = configuration.namespace
         self._base_calculation_endpoint = configuration.base_calculation_endpoint
-        self._fan_out = configuration.fan_out
+        self._fan_out = eval(configuration.fan_out)
 
         if self._base_calculation_endpoint == "":
             self._base_calculation_endpoint = f"http://ccs.{self._namespace}.svc.cluster.local"
 
-    def perform_calculations(self, log_information: LogInformationModel, request_client_id: str, client_id: str, inputs: dict, calculation_inputs_to_return_in_output: set, calculation_id: str, debug_mode: bool, original_payload: dict, token: str) -> dict[str, Any]:
+    def execute_sub_model(self, client_id: str, model: ModelModel, parameters: dict, token: str, calculation_id: str) -> dict[str, Any]:
+        return {"modelId": model.name}
+
+    def perform_calculations(self, log_information: LogInformationModel, request_client_id: str, client_id: str, inputs: dict[str, Any], calculation_inputs_to_return_in_output: set, calculation_id: str, debug_mode: bool, original_payload: dict, token: str) -> dict[str, Any]:
         error_message = "errorMessage"
         calculation_results = {}
         intermediate_calcs = {}
@@ -112,12 +116,16 @@ class RecommendedPrice(CalcEngineInterface):
 
                 if self._fan_out:
                     for line_input in quote_line_input:
-                        quote_lines.append({"modelId": "bob"})
-                        # execute sub model
+                        output = self.execute_sub_model(client_id, quote_line_sap_model, line_input, token, calculation_id)
+
+                        quote_lines.append(output)
                 else:
+                    quote_line_sap = QuoteLineSap()
+
                     for line_input in quote_line_input:
-                        quote_lines.append({"modelId": "bob"})
-                        # execute sub model
+                        output = quote_line_sap.execute_model(request_client_id, client_id, quote_line_sap_model, line_input, calculation_id, token)
+
+                        quote_lines.append(output)
 
                 calculation_results["quoteLines"] = quote_lines
 

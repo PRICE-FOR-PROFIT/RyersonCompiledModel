@@ -1,5 +1,6 @@
 import http.client
 import json
+from typing import Any
 from uuid import uuid4
 from flask import request
 from flask_restful import Resource
@@ -35,7 +36,7 @@ def generate_error_wrapper_with_meta(code: int, description: str, calculation_id
     return {"error": error, "metadata": metadata}
 
 
-def transform_input_list_object_array(data: [dict]) -> [str]:
+def transform_input_list_object_array(data: list) -> dict[str, Any]:
     transformed_data = {}
 
     for line in data:
@@ -43,7 +44,15 @@ def transform_input_list_object_array(data: [dict]) -> [str]:
         property_value = line["value"]
 
         if isinstance(property_value, list):
-            transformed_data[property_name] = [transform_input_list_object_array(property_value[0])]
+            converted = []
+
+            for pline in property_value:
+                if isinstance(pline, list):
+                    converted.append(transform_input_list_object_array(pline))
+                else:
+                    converted.append(pline)
+
+            transformed_data[property_name] = converted
         else:
             transformed_data[property_name] = property_value
 
@@ -231,6 +240,8 @@ class CalculationApi(Resource):
 
                 properties = extract_properties_to_include_in_response(input_data)
                 converted_inputs = lower_keys([transform_input_list_object_array(input_data)])
+
+                bob = json.dumps(converted_inputs)
 
                 calculation_inputs["modelinputs"] = converted_inputs[0]
                 calculation_inputs["includeinresponse"] = properties
