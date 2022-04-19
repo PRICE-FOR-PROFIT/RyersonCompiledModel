@@ -1,11 +1,15 @@
 import datetime
 import json
+from http import HTTPStatus
 from typing import Any
 from uuid import uuid4
+
+import requests as requests
 
 from api.exceptions.argumentnullerror import ArgumentNullError
 from api.exceptions.breakerror import BreakError
 from api.exceptions.dividebyzeroerror import DivideByZeroError
+from api.exceptions.maskederror import MaskedError
 from api.service.calculationhelper import CalculationHelper
 from api.service.modelservice import ModelService
 from api.service.quotelinesap import QuoteLineSap
@@ -32,7 +36,43 @@ class RecommendedPrice(CalcEngineInterface):
             self._base_calculation_endpoint = f"http://ccs.{self._namespace}.svc.cluster.local"
 
     def execute_sub_model(self, client_id: str, model: ModelModel, parameters: dict, token: str, calculation_id: str) -> dict[str, Any]:
-        return {"modelId": model.name}
+        calc_endpoint = f"{self._base_calculation_endpoint}/ces/clients/{client_id}/calculations/{model.id}"
+
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "x-insight-ns": self._namespace,
+            "x-insight-debug": str(model.debug_mode),
+            "x-insight-calculationid": calculation_id
+        }
+
+        payload = {
+            "InputParameters": None,
+            "IncludeInResponse": None,
+            "ModelInputs": parameters
+        }
+
+        response = requests.post(calc_endpoint, json=payload, headers=headers)
+
+        if response.status_code == HTTPStatus.OK:
+            json_response = response.json()
+
+            data = json_response.get("data")
+
+            if data is None:
+                raise Exception("Data element is missing from response wrapper.")
+
+            return data
+        else:
+            error_info = f"Failed Request to calculation service, url: {calc_endpoint}, status: {response.status_code}, message: {response.reason}, namespace: {self._namespace}"
+
+            # track exception
+
+            json_response = response.json()
+
+            if json_response is None:
+                raise Exception("An unknown error happened getting error data from the response.")
+
+            raise MaskedError(error_info, json_response.get("error").get("description"))
 
     def perform_calculations(self, log_information: LogInformationModel, request_client_id: str, client_id: str, inputs: dict[str, Any], calculation_inputs_to_return_in_output: set, calculation_id: str, debug_mode: bool, original_payload: dict, token: str) -> dict[str, Any]:
         error_message = "errorMessage"
@@ -110,47 +150,47 @@ class RecommendedPrice(CalcEngineInterface):
 
                 quote_line_input.append(ql)
 
-                quote_line_sap_model = model_service.get_model("quotelinesap", debug_mode)
+            quote_line_sap_model = model_service.get_model("quotelinesap", debug_mode)
 
-                quote_lines = list()
+            quote_lines = list()
 
-                if self._fan_out:
-                    for line_input in quote_line_input:
-                        output = self.execute_sub_model(client_id, quote_line_sap_model, line_input, token, calculation_id)
+            if self._fan_out:
+                for line_input in quote_line_input:
+                    output = self.execute_sub_model(client_id, quote_line_sap_model, line_input, token, calculation_id)
 
-                        quote_lines.append(output)
-                else:
-                    quote_line_sap = QuoteLineSap()
+                    quote_lines.append(output)
+            else:
+                quote_line_sap = QuoteLineSap()
 
-                    for line_input in quote_line_input:
-                        output = quote_line_sap.execute_model(request_client_id, client_id, quote_line_sap_model, line_input, calculation_id, token)
+                for line_input in quote_line_input:
+                    output = quote_line_sap.execute_model(request_client_id, client_id, quote_line_sap_model, line_input, calculation_id, token)
 
-                        quote_lines.append(output)
+                    quote_lines.append(output)
 
-                calculation_results["quoteLines"] = quote_lines
+            calculation_results["quoteLines"] = quote_lines
 
-                intermediate_calcs["totalQuotePounds"] = total_quote_pounds
-                intermediate_calcs["customerWithOfficeKey"] = customer_with_office_key
-                if customer_with_office_info is not None:
-                    intermediate_calcs["customerWithOfficeInfo"] = customer_with_office_info
+            intermediate_calcs["totalQuotePounds"] = total_quote_pounds
+            intermediate_calcs["customerWithOfficeKey"] = customer_with_office_key
+            if customer_with_office_info is not None:
+                intermediate_calcs["customerWithOfficeInfo"] = customer_with_office_info
 
-                if customer_without_office_info is not None:
-                    intermediate_calcs["customerWithoutOfficeInfo"] = customer_without_office_info
+            if customer_without_office_info is not None:
+                intermediate_calcs["customerWithoutOfficeInfo"] = customer_without_office_info
 
-                if default_office_info is not None:
-                    intermediate_calcs["defaultOfficeInfo"] = default_office_info
+            if default_office_info is not None:
+                intermediate_calcs["defaultOfficeInfo"] = default_office_info
 
-                intermediate_calcs["customerInfo"] = customer_info
-                intermediate_calcs["customerName"] = customer_name
-                intermediate_calcs["rcMapping"] = rc_mapping
-                intermediate_calcs["multiMarket"] = multi_market
-                intermediate_calcs["customerSalesOffice"] = customer_sales_office
-                intermediate_calcs["sapInd"] = sap_ind
-                intermediate_calcs["isrOffice"] = isr_office
-                intermediate_calcs["dsoAdder"] = dso_adder
-                intermediate_calcs["quoteLines"] = quote_lines
+            intermediate_calcs["customerInfo"] = customer_info
+            intermediate_calcs["customerName"] = customer_name
+            intermediate_calcs["rcMapping"] = rc_mapping
+            intermediate_calcs["multiMarket"] = multi_market
+            intermediate_calcs["customerSalesOffice"] = customer_sales_office
+            intermediate_calcs["sapInd"] = sap_ind
+            intermediate_calcs["isrOffice"] = isr_office
+            intermediate_calcs["dsoAdder"] = dso_adder
+            intermediate_calcs["quoteLines"] = quote_lines
 
-                log_information.intermediate_calculations = intermediate_calcs
+            log_information.intermediate_calculations = intermediate_calcs
         except BreakError as ex:
             # telemetry track exception
 

@@ -232,9 +232,11 @@ class CalculationApi(Resource):
 
         metadata = {"calculationid": calculation_id}
 
-        calculation_inputs = lower_keys(request.get_json())
+        json_payload = request.get_json()
 
-        if calculation_inputs["inputparameters"] is not None:
+        calculation_inputs = lower_keys(json_payload)
+
+        if calculation_inputs.get("inputparameters") is not None:
             try:
                 input_data = calculation_inputs["inputparameters"]
 
@@ -253,7 +255,7 @@ class CalculationApi(Resource):
 
                 return ErrorWrapperWithMetaSchema().dump(output), HTTPStatus.BAD_REQUEST
 
-        if calculation_inputs["modelinputs"] is None:
+        if calculation_inputs.get("modelinputs") is None:
             payload_error_info = "Input payload not structured correctly, neither property 'InputParameters' or 'modelInput' is not set."
 
             # ex = Exception(payload_error_info)
