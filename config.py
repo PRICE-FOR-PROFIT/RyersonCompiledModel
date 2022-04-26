@@ -12,3 +12,4 @@ class Config(object):
     namespace = environ.get('NAMESPACE') or "master"
     base_calculation_endpoint = environ.get('baseCalculationEndpoint') or "http://localhost:44359"
     fan_out = environ.get('fanOut') or False
+    connection = environ.get("localDataBasePath") or "C:\\VendorData\\SQLLite\\ryerson.db"

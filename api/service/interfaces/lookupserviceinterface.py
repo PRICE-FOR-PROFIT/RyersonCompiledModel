@@ -2,6 +2,7 @@ import abc
 from typing import Optional
 
 from api.model.customer import CustomerModel
+from api.model.opcode import OpCodeModel
 from api.model.product import ProductModel
 from api.model.packagingcost import PackagingCostModel
 from api.model.milltoplantfreight import MillToPlantFreightModel
@@ -43,7 +44,8 @@ class LookupServiceInterface(metaclass=abc.ABCMeta):
                 (hasattr(subclass, 'get_customer_without_office') and callable(subclass.get_customer_without_office)) and
                 (hasattr(subclass, 'get_default_office') and callable(subclass.get_default_office)) and
                 (hasattr(subclass, 'lookup_automated_tuning') and callable(subclass.lookup_automated_tuning)) and
-                (hasattr(subclass, 'lookup_location_group') and callable(subclass.lookup_location_group)))
+                (hasattr(subclass, 'lookup_location_group') and callable(subclass.lookup_location_group)) and
+                (hasattr(subclass, 'lookup_op_code') and callable(subclass.lookup_op_code)))
 
     @abc.abstractmethod
     def lookup_customer(self, client_id: str, table_id: str, label: str, default_value: Optional[CustomerModel]) -> CustomerModel:
@@ -78,6 +80,11 @@ class LookupServiceInterface(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def lookup_sap_freight(self, client_id, table_id: str, label: str, default_value: Optional[SapFreightModel]) -> SapFreightModel:
         """Locate the sap freight by sap id"""
+        pass
+
+    @abc.abstractmethod
+    def lookup_op_code(self, op_code: str, adjusted_net_weight_of_sales_item: float, net_weight_of_sales_item: float) -> OpCodeModel:
+        """Located the south skid charge by id"""
         pass
 
     @abc.abstractmethod

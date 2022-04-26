@@ -272,7 +272,7 @@ class CalculationApi(Resource):
             if model_id.casefold() == "recommendedPrice".casefold():
                 model = model_service.get_model(model_id, is_debug_header_set and has_debug_permissions)
 
-                lookup_service = SqlLiteLookupService()
+                lookup_service = SqlLiteLookupService(Config)
                 queued_logger = QueuedLogger()
                 quote_line_sap = QuoteLineSap()
                 recommended_price_model = RecommendedPrice(lookup_service, queued_logger, Config, quote_line_sap)
