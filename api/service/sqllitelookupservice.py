@@ -1,4 +1,5 @@
 import sqlite3
+import sys
 from abc import ABC
 from typing import Optional, Any
 
@@ -641,7 +642,20 @@ class SqlLiteLookupService(LookupServiceInterface, ABC):
         return ido_from_row(row)
 
     def bucketed_lookup(self, client_id: str, table_id: str, val: float, column: str) -> str:
-        pass
+        query = f"SELECT * FROM {table_id} WHERE coalesce(min, {sys.maxsize}) <= {val} and coalesce(max, {sys.maxsize}) >= {val} COLLATE NOCASE"
+
+        cursor = self._connection.cursor()
+
+        cursor.execute(query)
+
+        cursor.row_factory = sqlite3.Row
+
+        row = cursor.fetchone()
+
+        if row is None:
+            return None
+
+        return row[column]
 
     def get_customer_without_office(self, customer_number: str) -> CustomerModel:
         query = f"SELECT * FROM customers WHERE customernumber = '{customer_number}' COLLATE NOCASE"

@@ -160,7 +160,7 @@ class RecommendedPrice(CalcEngineInterface):
 
                     quote_lines.append(output)
             else:
-                quote_line_sap = QuoteLineSap()
+                quote_line_sap = QuoteLineSap(self._lookup_service, None, self._config)
 
                 for line_input in quote_line_input:
                     output = quote_line_sap.execute_model(request_client_id, client_id, quote_line_sap_model, line_input, calculation_id, token)

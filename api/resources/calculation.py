@@ -274,14 +274,17 @@ class CalculationApi(Resource):
 
                 lookup_service = SqlLiteLookupService(Config)
                 queued_logger = QueuedLogger()
-                quote_line_sap = QuoteLineSap()
+                quote_line_sap = QuoteLineSap(lookup_service, queued_logger, Config)
                 recommended_price_model = RecommendedPrice(lookup_service, queued_logger, Config, quote_line_sap)
 
                 json_output = recommended_price_model.execute_model(authenticated_client_id, client_id, model, calculation_inputs, calculation_id, token)
             else:
                 model = model_service.get_model(model_id, is_debug_header_set and has_debug_permissions)
 
-                quote_line_sap = QuoteLineSap()
+                lookup_service = SqlLiteLookupService(Config)
+                queued_logger = QueuedLogger()
+
+                quote_line_sap = QuoteLineSap(lookup_service, queued_logger, Config)
 
                 json_output = quote_line_sap.execute_model(authenticated_client_id, client_id, model, calculation_inputs, calculation_id, token)
 
