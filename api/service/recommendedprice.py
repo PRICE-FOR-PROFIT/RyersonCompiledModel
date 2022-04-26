@@ -86,39 +86,57 @@ class RecommendedPrice(CalcEngineInterface):
             model_service = ModelService()
 
             total_quote_pounds = sum(map(lambda ql: float(ql["weight"]), inputs["quotelines"]))
+            intermediate_calcs["totalQuotePounds"] = total_quote_pounds
 
             customer_id = inputs.get('customerid')
             sales_office = inputs.get('salesoffice')
 
             customer_with_office_key = f"{customer_id}|{sales_office}"
+            intermediate_calcs["customerWithOfficeKey"] = customer_with_office_key
 
             customer_with_office_info = None if sales_office == "NA" else self._lookup_service.lookup_customer(client_id, "customers", customer_with_office_key, None)
+            if customer_with_office_info is not None:
+                intermediate_calcs["customerWithOfficeInfo"] = customer_with_office_info
 
             customer_without_office_info = self._lookup_service.get_customer_without_office(customer_id) if sales_office == "NA" else None
+            if customer_without_office_info is not None:
+                intermediate_calcs["customerWithoutOfficeInfo"] = customer_without_office_info
 
             default_office_info = self._lookup_service.get_default_office(sales_office) if customer_with_office_info is None and customer_without_office_info is None else None
+            if default_office_info is not None:
+                intermediate_calcs["defaultOfficeInfo"] = default_office_info
 
             customer_info = customer_with_office_info or customer_without_office_info or default_office_info
+
+            if customer_info is not None:
+                intermediate_calcs["customerInfo"] = customer_info
 
             if customer_info is None:
                 raise BreakError("Customer not found.")
 
             customer_name = customer_info.customer_name
+            intermediate_calcs["customerName"] = customer_name
 
             rc_mapping = customer_info.rc_mapping.upper()
+            intermediate_calcs["rcMapping"] = rc_mapping
 
             if rc_mapping == "":
                 raise BreakError("rcMapping not found.")
 
             multi_market = customer_info.multi_market_name.upper()
+            intermediate_calcs["multiMarket"] = multi_market
 
             customer_sales_office = customer_info.customer_sales_office
+            intermediate_calcs["customerSalesOffice"] = customer_sales_office
 
             sap_ind = customer_info.sap_ind
+            intermediate_calcs["sapInd"] = sap_ind
 
             isr_office = customer_info.isr_office
+            intermediate_calcs["isrOffice"] = isr_office
 
             dso_adder = customer_info.dso_adder
+            intermediate_calcs["dsoAdder"] = dso_adder
 
             # Get the quote lines from the original payload
             original_quote_lines = original_payload.get("modelinputs").get("quotelines")
@@ -146,25 +164,6 @@ class RecommendedPrice(CalcEngineInterface):
                 quote_line["totalQuotePounds"] = total_quote_pounds
                 quote_line["IndependentCalculationFlag"] = inputs.get('independentcalculationflag')
 
-                # ql = {
-                #     "rcMapping": rc_mapping,
-                #     "isrOffice": isr_office,
-                #     "multiMarket": multi_market,
-                #     "customerId": customer_id,
-                #     "customerName": customer_name,
-                #     "sapInd": sap_ind,
-                #     "customerSalesOffice": customer_sales_office,
-                #     "shipToState": inputs.get('shiptostate'),
-                #     "shipToZipCode": inputs.get('shiptozipcode'),
-                #     "isrName": inputs.get('isrname'),
-                #     "dsoAdder": dso_adder,
-                #     "waiveSkid": customer_info.waive_skid,
-                #     "dollarAdder": customer_info.dollar_adder,
-                #     "percentAdder": customer_info.percent_adder,
-                #     "totalQuotePounds": total_quote_pounds,
-                #     "IndependentCalculationFlag": inputs.get('independentcalculationflag')
-                # }
-
                 quote_line_input.append(quote_line)
 
             quote_line_sap_model = model_service.get_model("quotelinesap", debug_mode)
@@ -184,28 +183,8 @@ class RecommendedPrice(CalcEngineInterface):
 
                     quote_lines.append(output)
 
-            calculation_results["quoteLines"] = quote_lines
-
-            intermediate_calcs["totalQuotePounds"] = total_quote_pounds
-            intermediate_calcs["customerWithOfficeKey"] = customer_with_office_key
-            if customer_with_office_info is not None:
-                intermediate_calcs["customerWithOfficeInfo"] = customer_with_office_info
-
-            if customer_without_office_info is not None:
-                intermediate_calcs["customerWithoutOfficeInfo"] = customer_without_office_info
-
-            if default_office_info is not None:
-                intermediate_calcs["defaultOfficeInfo"] = default_office_info
-
-            intermediate_calcs["customerInfo"] = customer_info
-            intermediate_calcs["customerName"] = customer_name
-            intermediate_calcs["rcMapping"] = rc_mapping
-            intermediate_calcs["multiMarket"] = multi_market
-            intermediate_calcs["customerSalesOffice"] = customer_sales_office
-            intermediate_calcs["sapInd"] = sap_ind
-            intermediate_calcs["isrOffice"] = isr_office
-            intermediate_calcs["dsoAdder"] = dso_adder
             intermediate_calcs["quoteLines"] = quote_lines
+            calculation_results["quoteLines"] = quote_lines
 
             log_information.intermediate_calculations = intermediate_calcs
         except BreakError as ex:

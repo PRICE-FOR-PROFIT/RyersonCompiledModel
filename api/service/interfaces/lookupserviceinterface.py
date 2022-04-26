@@ -1,6 +1,7 @@
 import abc
 from typing import Optional
 
+from api.model.costadjustment import CostAdjustmentModel
 from api.model.customer import CustomerModel
 from api.model.opcode import OpCodeModel
 from api.model.product import ProductModel
@@ -45,7 +46,10 @@ class LookupServiceInterface(metaclass=abc.ABCMeta):
                 (hasattr(subclass, 'get_default_office') and callable(subclass.get_default_office)) and
                 (hasattr(subclass, 'lookup_automated_tuning') and callable(subclass.lookup_automated_tuning)) and
                 (hasattr(subclass, 'lookup_location_group') and callable(subclass.lookup_location_group)) and
-                (hasattr(subclass, 'lookup_op_code') and callable(subclass.lookup_op_code)))
+                (hasattr(subclass, 'lookup_op_code') and callable(subclass.lookup_op_code)) and
+                (hasattr(subclass, 'lookup_cost_adjustment') and callable(subclass.lookup_cost_adjustment)) and
+                (hasattr(subclass, 'lookup_exchange_rate') and callable(subclass.lookup_exchange_rate))
+                )
 
     @abc.abstractmethod
     def lookup_customer(self, client_id: str, table_id: str, label: str, default_value: Optional[CustomerModel]) -> CustomerModel:
@@ -155,4 +159,14 @@ class LookupServiceInterface(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def lookup_location_group(self, client_id: str, table_id: str, label: str, default_value: Optional[LocationGroupModel]) -> LocationGroupModel:
         """Locate the location group by id"""
+        pass
+
+    @abc.abstractmethod
+    def lookup_cost_adjustment(self, client_id: str, table_id: str, label: str, default_value: Optional[CostAdjustmentModel]) -> CostAdjustmentModel:
+        """Locate the cost adjustment by id"""
+        pass
+
+    @abc.abstractmethod
+    def lookup_exchange_rate(self, client_id: str, table_id: str, label: str, default_value: Optional[ProductModel]) -> ProductModel:
+        """Locate the cost adjustment by id"""
         pass

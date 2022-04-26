@@ -6,6 +6,7 @@ from typing import Optional, Any
 from api.model.automatedtuning import AutomatedTuningModel
 from api.model.bwrating import BwRatingModel
 from api.model.clcode import ClCodeModel
+from api.model.costadjustment import CostAdjustmentModel
 from api.model.customer import CustomerModel
 from api.model.freightdefault import FreightDefaultModel
 from api.model.ido import IdoModel
@@ -307,6 +308,22 @@ def automated_tuning_from_row(row: Any) -> AutomatedTuningModel:
     automated_tuning.salt_value = row["saltvalue"]
 
     return automated_tuning
+
+
+def cost_adjustment_from_row(row: Any) -> CostAdjustmentModel:
+    cost_adjustment = CostAdjustmentModel()
+
+    cost_adjustment.product = row["product"]
+    cost_adjustment.cost = row["cost"]
+    cost_adjustment.form = row["form"]
+    cost_adjustment.material = row["material"]
+    cost_adjustment.material_classification = row["materialclassification"]
+    cost_adjustment.material_description = row["materialdescription"]
+    cost_adjustment.stock_plant = row["stockplant"]
+    cost_adjustment.target_margin = row["targetmargin"]
+    cost_adjustment.unique_id = row["uniqueid"]
+
+    return cost_adjustment
 
 
 def location_group_from_row(row: Any) -> LocationGroupModel:
@@ -724,3 +741,39 @@ class SqlLiteLookupService(LookupServiceInterface, ABC):
             return None
 
         return location_group_from_row(row)
+
+    def lookup_cost_adjustment(self, client_id: str, table_id: str, label: str, default_value: Optional[CostAdjustmentModel]) -> CostAdjustmentModel:
+        query = f"SELECT * FROM {table_id} WHERE uniqueid = :label COLLATE NOCASE"
+
+        params = {"label": label}
+
+        cursor = self._connection.cursor()
+
+        cursor.execute(query, params)
+
+        cursor.row_factory = sqlite3.Row
+
+        row = cursor.fetchone()
+
+        if row is None:
+            return None
+
+        return cost_adjustment_from_row(row)
+
+    def lookup_exchange_rate(self, client_id: str, table_id: str, label: str, default_value: Optional[ProductModel]) -> ProductModel:
+        query = f"SELECT * FROM {table_id} WHERE rcMapping = :label limit 1 COLLATE NOCASE"
+
+        params = {"label": label}
+
+        cursor = self._connection.cursor()
+
+        cursor.execute(query, params)
+
+        cursor.row_factory = sqlite3.Row
+
+        row = cursor.fetchone()
+
+        if row is None:
+            return None
+
+        return product_from_row(row)

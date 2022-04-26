@@ -87,19 +87,11 @@ def convert_json_to_calculation_output(obj: {}) -> [{}]:
 
     for key, value in obj.items():
         if isinstance(value, list):
-            o = CalculationOutputModel()
-
-            o.Name = key
-            o.Passthrough = True
-            o.Value = convert_list_to_output_list(value)
+            o = CalculationOutputModel(key, True, convert_list_to_output_list(value))
 
             output.append(o)
         else:
-            o = CalculationOutputModel()
-
-            o.Name = key
-            o.Passthrough = True
-            o.Value = value
+            o = CalculationOutputModel(key, True, value)
 
             output.append(o)
 
@@ -118,11 +110,7 @@ def convert_list_to_output_list(arr: list) -> list:
             else:
                 val = value
 
-            calc = CalculationOutputModel()
-
-            calc.Name = key
-            calc.Passthrough = True
-            calc.Value = val
+            calc = CalculationOutputModel(key, True, val)
 
             line_data.append(calc)
 
