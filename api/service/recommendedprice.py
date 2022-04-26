@@ -129,26 +129,43 @@ class RecommendedPrice(CalcEngineInterface):
             quote_line_input = list()
 
             for quote_line in original_quote_lines:
-                ql = {
-                    "rcMapping": rc_mapping,
-                    "isrOffice": isr_office,
-                    "multiMarket": multi_market,
-                    "customerId": customer_id,
-                    "customerName": customer_name,
-                    "sapInd": sap_ind,
-                    "customerSalesOffice": customer_sales_office,
-                    "shipToState": inputs.get('shiptostate'),
-                    "shipToZipCode": inputs.get('shiptozipcode'),
-                    "isrName": inputs.get('isrname'),
-                    "dsoAdder": dso_adder,
-                    "waiveSkid": customer_info.waive_skid,
-                    "dollarAdder": customer_info.dollar_adder,
-                    "percentAdder": customer_info.percent_adder,
-                    "totalQuotePounds": total_quote_pounds,
-                    "IndependentCalculationFlag": inputs.get('independentcalculationflag')
-                }
+                quote_line["rcMapping"] = rc_mapping
+                quote_line["isrOffice"] = isr_office
+                quote_line["multiMarket"] = multi_market
+                quote_line["customerId"] = customer_id
+                quote_line["customerName"] = customer_name
+                quote_line["sapInd"] = sap_ind
+                quote_line["customerSalesOffice"] = customer_sales_office
+                quote_line["shipToState"] = inputs.get('shiptostate')
+                quote_line["shipToZipCode"] = inputs.get('shiptozipcode')
+                quote_line["isrName"] = inputs.get('isrname')
+                quote_line["dsoAdder"] = dso_adder
+                quote_line["waiveSkid"] = customer_info.waive_skid
+                quote_line["dollarAdder"] = customer_info.dollar_adder
+                quote_line["percentAdder"] = customer_info.percent_adder
+                quote_line["totalQuotePounds"] = total_quote_pounds
+                quote_line["IndependentCalculationFlag"] = inputs.get('independentcalculationflag')
 
-                quote_line_input.append(ql)
+                # ql = {
+                #     "rcMapping": rc_mapping,
+                #     "isrOffice": isr_office,
+                #     "multiMarket": multi_market,
+                #     "customerId": customer_id,
+                #     "customerName": customer_name,
+                #     "sapInd": sap_ind,
+                #     "customerSalesOffice": customer_sales_office,
+                #     "shipToState": inputs.get('shiptostate'),
+                #     "shipToZipCode": inputs.get('shiptozipcode'),
+                #     "isrName": inputs.get('isrname'),
+                #     "dsoAdder": dso_adder,
+                #     "waiveSkid": customer_info.waive_skid,
+                #     "dollarAdder": customer_info.dollar_adder,
+                #     "percentAdder": customer_info.percent_adder,
+                #     "totalQuotePounds": total_quote_pounds,
+                #     "IndependentCalculationFlag": inputs.get('independentcalculationflag')
+                # }
+
+                quote_line_input.append(quote_line)
 
             quote_line_sap_model = model_service.get_model("quotelinesap", debug_mode)
 
@@ -281,7 +298,6 @@ class RecommendedPrice(CalcEngineInterface):
             log_information.calculation_inputs = inputs
 
             calculation_output = self.perform_calculations(log_information, request_client_id, client_id, inputs, calculation_inputs_to_return_in_output, calculation_id, model.debug_mode, original_payload, token)
-            # calculation_output = {"modelId": model.id, "quoteLines": [{"itemNumber": "000010", "recommendedPricePerPound": "9.801"}]}
 
             json_output = json_output | calculation_output
 
