@@ -17,6 +17,7 @@ from api.service.interfaces.calcengineinterface import CalcEngineInterface
 from api.model.model import ModelModel
 from api.service.interfaces.lookupserviceinterface import LookupServiceInterface
 from api.service.interfaces.queuedloggerinterface import QueuedLoggerInterface
+from api.service.miscoperations import MiscOperations
 from config import Config
 
 
@@ -121,6 +122,67 @@ class QuoteLineSap(CalcEngineInterface):
 
             if cost_plus:
                 exchange_rate_info = self._lookup_service.lookup_exchange_rate(client_id, "products", inputs.get("rcmapping"), None)
+
+                if exchange_rate_info is not None:
+                    intermediate_calcs["exchangeRateInfo"] = ProductSchema().dump(exchange_rate_info)
+
+                exchange_rate = exchange_rate_info.exchange_rate if exchange_rate_info is not None else 0.0
+            else:
+                exchange_rate = product_info.exchange_rate if product_info is not None else 0.0
+
+            if exchange_rate == 0.0:
+                raise BreakError("exchangeRate not found.")
+
+            intermediate_calcs["exchangeRate"] = exchange_rate
+
+            material_description = cost_adjustment_test_info.material_description if cost_plus else product_info.material_description
+            intermediate_calcs["materialDescription"] = material_description
+
+            product = cost_adjustment_test_info.product.upper() if cost_plus else product_info.product_name.upper()
+            intermediate_calcs["product"] = product
+
+            form = cost_adjustment_test_info.form.upper() if cost_plus else product_info.form.upper()
+            intermediate_calcs["form"] = form
+
+            market_movement_adder = 0.0 if cost_plus else product_info.market_movement_adder
+            intermediate_calcs["marketMovementAdder"] = market_movement_adder
+
+            percent_adjustment = 1.0 if cost_plus else product_info.percent_adjustment
+            intermediate_calcs["percentAdjustment"] = percent_adjustment
+
+            dollar_adjustment = 0.0 if cost_plus else product_info.dollar_adjustment
+            intermediate_calcs["dollarAdjustment"] = dollar_adjustment
+
+            modeled_cost_raw = cost_adjustment_test_info.cost if cost_plus else product_info.modeled_cost
+            intermediate_calcs["modeledCostRaw"] = modeled_cost_raw
+
+            cost_adjustment_salt_value = "IE_COST_ADJUSTMENT_TEST"
+            intermediate_calcs["costAdjustmentSaltValue"] = index
+
+            cost_adjustment_hash_fields = "CustomerId" + "|" + "isrOffice" + "|" + "material" + "|" + "costAdjustmentSaltValue"
+            intermediate_calcs["costAdjustmentHashFields"] = index
+
+            cost_adjustment_hash_values = f"{customer_id}|{inputs.get('isroffice')}|{inputs.get('material')}|{cost_adjustment_salt_value}"
+            intermediate_calcs["costAdjustmentHashValues"] = cost_adjustment_hash_values
+
+            cost_adj_partition_value = MiscOperations.get_partition_value(cost_adjustment_hash_values)
+            intermediate_calcs["costAdjPartitionValue"] = cost_adj_partition_value
+
+            cost_adjustment_test_group_num = int(math.ceil(cost_adj_partition_value/(1.0/7.0)))
+            intermediate_calcs["costAdjustmentTestGroupNum"] = cost_adjustment_test_group_num
+
+            test_groups = ["A", "B", "C", "D", "E", "F", "G"]
+
+            cost_adjustment_test_group = test_groups[cost_adjustment_test_group_num - 1]
+            intermediate_calcs["costAdjustmentTestGroup"] = cost_adjustment_test_group
+
+            test_group_percentages = [0.0, 0.05, -0.05, 0.10, -0.10, 0.20, -0.20]
+
+            cost_adjustment_percent_raw = test_group_percentages[cost_adjustment_test_group_num - 1]
+            intermediate_calcs["costAdjustmentPercentRaw"] = cost_adjustment_percent_raw
+
+            cost_adjustment_percent = cost_adjustment_percent_raw if (cost_plus or material_classification.casefold() == "lm".casefold()) and 25 <= inputs.get("weight") <= 5000 and not is_test_customer else 0.00
+            intermediate_calcs["costAdjustmentPercent"] = cost_adjustment_percent
 
             outputs.append(CalculationOutputModel("itemNumber", False, "000010"))
             outputs.append(CalculationOutputModel("recommendedPricePerPound", True, "9.801"))

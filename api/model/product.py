@@ -16,4 +16,4 @@ class ProductModel:
         self.per_ton_packaging_cost = ""
         self.per_ton_stocking_cost = ""
         self.material_description = ""
-        self.exchangerate = ""
+        self.exchange_rate = ""
