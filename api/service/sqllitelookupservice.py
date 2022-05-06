@@ -343,7 +343,7 @@ def mill_to_plant_freight_from_row(row: Any) -> PackagingCostModel:
     mill_to_plant_freight.unique_id = row["uniqueid"]
     mill_to_plant_freight.bellwether_material = row["bellwethermaterial"]
     mill_to_plant_freight.ship_plant = row["shipplant"]
-    mill_to_plant_freight.mill_to_plant_freight_value = row["milltoplantfreight"]
+    mill_to_plant_freight.mill_to_plant_freight_value = float(row["milltoplantfreight"])
 
     return mill_to_plant_freight
 
@@ -620,7 +620,7 @@ class SqlLiteLookupService(LookupServiceInterface, ABC):
         if row is None:
             return None
 
-        return target_margin_from_row(row)
+        return target_margin_from_row(row).target_margin_value
 
     def lookup_cl_code(self, client_id: str, table_id: str, label: str, default_value: Optional[ClCodeModel]) -> ClCodeModel:
         query = f"SELECT * FROM {table_id} WHERE uniqueid = :label COLLATE NOCASE"

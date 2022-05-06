@@ -7,7 +7,7 @@ from api.model.calculationinput import CalculationInputModel
 class CalculationHelper:
     @staticmethod
     def is_defaultable(parameter: ParameterModel, calc_input_name: set) -> bool:
-        return not parameter.is_required and parameter.default_value is not None and not parameter.name in calc_input_name
+        return not parameter.is_required and parameter.default_value is not None and parameter.name.lower() not in calc_input_name
 
     @staticmethod
     def get_default_value(parameter: ParameterModel) -> any:
