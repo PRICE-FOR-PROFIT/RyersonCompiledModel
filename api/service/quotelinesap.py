@@ -49,6 +49,21 @@ class QuoteLineSap(CalcEngineInterface):
         self._fan_out = eval(configuration.fan_out)
 
     @staticmethod
+    def calculate_recommended_price_per_pound_for_weight_class(rc_mapping: str, multi_market: str, weight_class: float, cust_price_weight_class: float, non_mat_cost_weight_class: float, cust_service_percent_adder: float, cust_service_dollar_adder: float, floor_price: float, automated_tuning_magnitude: float, bw_rating_adder: float, price_adjustment: float) -> str:
+        if rc_mapping.casefold() == "SOUTH".casefold() and weight_class <= 500.0:
+            a = 25.0
+        else:
+            if multi_market.casefold() == "NORTHEAST".casefold() and weight_class <= 1000:
+                a = 15.0
+            else:
+                if rc_mapping.casefold() != "SOUTH".casefold() and multi_market.casefold() != "NORTHEAST" and weight_class <= 500.0:
+                    a = 50.0
+                else:
+                    a = 0.0
+
+        return str(round(((max(round(((((cust_price_weight_class + non_mat_cost_weight_class)) + (a) / weight_class) * (1 + cust_service_percent_adder)) + (cust_service_dollar_adder / weight_class), 4), floor_price) * (1.0 + automated_tuning_magnitude) * (1.0 + bw_rating_adder)) + price_adjustment), 4))
+
+    @staticmethod
     def calculate_order_cost_for_weight_class(unit_handling_cost: float, waive_skid: str, packaging_cost_per_pound: float, sap_ind: str, south_skid_charge_info: SouthSkidChargeModel, south_skid_charge_weight: float, south_skid_charge: float, stocking_cost_per_pound: float, weight_class: float) -> float:
         if waive_skid.casefold() == "N".casefold():
             if sap_ind.casefold() == "Y".casefold():
@@ -797,6 +812,48 @@ class QuoteLineSap(CalcEngineInterface):
             recommended_price_per_pound_value = round(rec_price_with_automated_tuning + price_adjustment, 4)
             intermediate_calcs["recommendedPricePerPoundValue"] = recommended_price_per_pound_value
 
+            recommended_price_per_pound = str(recommended_price_per_pound_value)
+            intermediate_calcs["recommendedPricePerPound"] = recommended_price_per_pound
+
+            rec_price_wc_1 = self.calculate_recommended_price_per_pound_for_weight_class(inputs.get("rcmapping"), inputs.get("multimarket"), 1.0, cust_price_weight_class_200, non_mat_cost_weight_class_200, cust_service_percent_adder, cust_service_dollar_adder, floor_price, automated_tuning_magnitude, bw_rating_adder, price_adjustment)
+            intermediate_calcs["recPriceWC1"] = rec_price_wc_1
+
+            rec_price_wc_200 = self.calculate_recommended_price_per_pound_for_weight_class(inputs.get("rcmapping"), inputs.get("multimarket"), 200.0, cust_price_weight_class_200, non_mat_cost_weight_class_200, cust_service_percent_adder, cust_service_dollar_adder, floor_price, automated_tuning_magnitude, bw_rating_adder, price_adjustment)
+            intermediate_calcs["recPriceWC200"] = rec_price_wc_200
+
+            rec_price_wc_500 = self.calculate_recommended_price_per_pound_for_weight_class(inputs.get("rcmapping"), inputs.get("multimarket"), 500.0, cust_price_weight_class_200, non_mat_cost_weight_class_200, cust_service_percent_adder, cust_service_dollar_adder, floor_price, automated_tuning_magnitude, bw_rating_adder, price_adjustment)
+            intermediate_calcs["recPriceWC500"] = rec_price_wc_500
+
+            rec_price_wc_1000 = self.calculate_recommended_price_per_pound_for_weight_class(inputs.get("rcmapping"), inputs.get("multimarket"), 1000.0, cust_price_weight_class_200, non_mat_cost_weight_class_200, cust_service_percent_adder, cust_service_dollar_adder, floor_price, automated_tuning_magnitude, bw_rating_adder, price_adjustment)
+            intermediate_calcs["recPriceWC1000"] = rec_price_wc_1000
+
+            rec_price_wc_2000 = self.calculate_recommended_price_per_pound_for_weight_class(inputs.get("rcmapping"), inputs.get("multimarket"), 2000.0, cust_price_weight_class_200, non_mat_cost_weight_class_200, cust_service_percent_adder, cust_service_dollar_adder, floor_price, automated_tuning_magnitude, bw_rating_adder, price_adjustment)
+            intermediate_calcs["recPriceWC2000"] = rec_price_wc_2000
+
+            rec_price_wc_5000 = self.calculate_recommended_price_per_pound_for_weight_class(inputs.get("rcmapping"), inputs.get("multimarket"), 5000.0, cust_price_weight_class_200, non_mat_cost_weight_class_200, cust_service_percent_adder, cust_service_dollar_adder, floor_price, automated_tuning_magnitude, bw_rating_adder, price_adjustment)
+            intermediate_calcs["recPriceWC5000"] = rec_price_wc_5000
+
+            rec_price_wc_6500 = self.calculate_recommended_price_per_pound_for_weight_class(inputs.get("rcmapping"), inputs.get("multimarket"), 6500.0, cust_price_weight_class_200, non_mat_cost_weight_class_200, cust_service_percent_adder, cust_service_dollar_adder, floor_price, automated_tuning_magnitude, bw_rating_adder, price_adjustment)
+            intermediate_calcs["recPriceWC6500"] = rec_price_wc_6500
+
+            rec_price_wc_10000 = self.calculate_recommended_price_per_pound_for_weight_class(inputs.get("rcmapping"), inputs.get("multimarket"), 10000.0, cust_price_weight_class_200, non_mat_cost_weight_class_200, cust_service_percent_adder, cust_service_dollar_adder, floor_price, automated_tuning_magnitude, bw_rating_adder, price_adjustment)
+            intermediate_calcs["recPriceWC10000"] = rec_price_wc_10000
+
+            rec_price_wc_20000 = self.calculate_recommended_price_per_pound_for_weight_class(inputs.get("rcmapping"), inputs.get("multimarket"), 20000.0, cust_price_weight_class_200, non_mat_cost_weight_class_200, cust_service_percent_adder, cust_service_dollar_adder, floor_price, automated_tuning_magnitude, bw_rating_adder, price_adjustment)
+            intermediate_calcs["recPriceWC20000"] = rec_price_wc_20000
+
+            rec_price_wc_24000 = self.calculate_recommended_price_per_pound_for_weight_class(inputs.get("rcmapping"), inputs.get("multimarket"), 24000.0, cust_price_weight_class_200, non_mat_cost_weight_class_200, cust_service_percent_adder, cust_service_dollar_adder, floor_price, automated_tuning_magnitude, bw_rating_adder, price_adjustment)
+            intermediate_calcs["recPriceWC24000"] = rec_price_wc_24000
+
+            rec_price_wc_40000 = self.calculate_recommended_price_per_pound_for_weight_class(inputs.get("rcmapping"), inputs.get("multimarket"), 40000.0, cust_price_weight_class_200, non_mat_cost_weight_class_200, cust_service_percent_adder, cust_service_dollar_adder, floor_price, automated_tuning_magnitude, bw_rating_adder, price_adjustment)
+            intermediate_calcs["recPriceWC40000"] = rec_price_wc_40000
+
+            margin = recommended_price_per_pound_value - total_cost_per_pound
+            intermediate_calcs["margin"] = margin
+
+            margin_percent = margin / recommended_price_per_pound_value
+            intermediate_calcs["marginPercent"] = margin_percent
+
             bob = json.dumps(intermediate_calcs, default=str)
 
             outputs.append(CalculationOutputModel("itemNumber", False, "000010"))
@@ -828,8 +885,6 @@ class QuoteLineSap(CalcEngineInterface):
         return json_output
 
     def execute_model(self, request_client_id: str, client_id: str, model: ModelModel, original_payload: dict[str, Any], calculation_id: str, token: str) -> dict[str, Any]:
-
-        # i = self._lookup_service.lookup_op_code("ABM", 100.0, 10.0)
 
         json_output = {}
 
