@@ -1,5 +1,6 @@
 import datetime
 import math
+from datetime import date
 from typing import Any
 from uuid import uuid4
 import json
@@ -26,6 +27,9 @@ from api.schema.sapfreight import SapFreightSchema
 from api.schema.southfreight import SouthFreightSchema
 from api.schema.freight import FreightSchema
 from api.schema.freightdefault import FreightDefaultSchema
+from api.schema.sobwfloorprice import SoBwFloorPriceSchema
+from api.schema.bwrating import BwRatingSchema
+from api.schema.locationgroup import LocationGroupSchema
 from api.service.calculationhelper import CalculationHelper
 from api.service.interfaces.calcengineinterface import CalcEngineInterface
 from api.model.model import ModelModel
@@ -94,7 +98,7 @@ class QuoteLineSap(CalcEngineInterface):
             stock_plant = inputs.get("stockplant")
             intermediate_calcs["stockPlant"] = stock_plant
 
-            independent_calculation_flag = inputs.get("independentcalculationflag")
+            independent_calculation_flag = bool(inputs.get("independentcalculationflag"))
             intermediate_calcs["independentCalculationFlag"] = independent_calculation_flag
 
             ship_to_state = inputs.get("shiptostate")
@@ -124,7 +128,7 @@ class QuoteLineSap(CalcEngineInterface):
             intermediate_calcs["adjustedBundles"] = adjusted_bundles
 
             product_key = f"{inputs.get('rcmapping')}|{material}"
-            intermediate_calcs["productKey"] = weight
+            intermediate_calcs["productKey"] = product_key
 
             product_info = self._lookup_service.lookup_product(client_id, "products", product_key, None)
             if product_info is not None:
@@ -134,7 +138,8 @@ class QuoteLineSap(CalcEngineInterface):
             intermediate_calcs["costAdjustmentTestLookupKey"] = cost_adjustment_lookup_key
 
             cost_adjustment_test_info = self._lookup_service.lookup_cost_adjustment(client_id, "cost_adjustment_test_materials", cost_adjustment_lookup_key, None)
-            intermediate_calcs["costAdjustmentTestInfo"] = CostAdjustmentSchema().dump(cost_adjustment_test_info)
+            if cost_adjustment_test_info is not None:
+                intermediate_calcs["costAdjustmentTestInfo"] = CostAdjustmentSchema().dump(cost_adjustment_test_info)
 
             material_classification = "STD" if cost_adjustment_test_info is None or cost_adjustment_test_info.material_classification == "" else cost_adjustment_test_info.material_classification
             intermediate_calcs["materialClassification"] = material_classification
@@ -196,7 +201,7 @@ class QuoteLineSap(CalcEngineInterface):
             intermediate_calcs["modeledCostRaw"] = modeled_cost_raw
 
             cost_adjustment_salt_value = "IE_COST_ADJUSTMENT_TEST"
-            intermediate_calcs["costAdjustmentSaltValue"] = index
+            intermediate_calcs["costAdjustmentSaltValue"] = cost_adjustment_salt_value
 
             cost_adjustment_hash_fields = "CustomerId" + "|" + "isrOffice" + "|" + "material" + "|" + "costAdjustmentSaltValue"
             intermediate_calcs["costAdjustmentHashFields"] = cost_adjustment_hash_fields
@@ -236,7 +241,8 @@ class QuoteLineSap(CalcEngineInterface):
             intermediate_calcs["mtpKey"] = mtp_key
 
             mtp_ship_plant_info = self._lookup_service.lookup_mill_to_plant_freight(client_id, "mill_to_plant_freights", mtp_key, None)
-            intermediate_calcs["mtpShipPlantInfo"] = MillToPlantFreightSchema().dump(mtp_ship_plant_info)
+            if mtp_ship_plant_info is not None:
+                intermediate_calcs["mtpShipPlantInfo"] = MillToPlantFreightSchema().dump(mtp_ship_plant_info)
 
             mill_to_plant_freight = 0.0 if mtp_ship_plant_info is None else mtp_ship_plant_info.mill_to_plant_freight_value
             intermediate_calcs["millToPlantFreight"] = mill_to_plant_freight
@@ -248,7 +254,8 @@ class QuoteLineSap(CalcEngineInterface):
             intermediate_calcs["idoKey"] = ido_key
 
             ido_info = self._lookup_service.lookup_ido(client_id, "ido_lookup", ido_key, None)
-            intermediate_calcs["idoInfo"] = IdoSchema().dump(ido_info)
+            if ido_info is not None:
+                intermediate_calcs["idoInfo"] = IdoSchema().dump(ido_info)
 
             ido_per_pound = 0 if ido_info is None else ido_info.ido_per_pound / 100
             intermediate_calcs["idoPerPound"] = ido_per_pound
@@ -256,7 +263,7 @@ class QuoteLineSap(CalcEngineInterface):
             ido_min = 0.00 if ido_info is None else ido_info.ido_min
             intermediate_calcs["idoMin"] = ido_min
 
-            ido_max = 0.00 if ido_info is None else ido_info.ido_max
+            ido_max = 10000.0 if ido_info is None else ido_info.ido_max
             intermediate_calcs["idoMax"] = ido_max
 
             ido_per_pound_min_constrained = ido_min / weight if ido_per_pound * weight < ido_min else ido_per_pound
@@ -268,7 +275,7 @@ class QuoteLineSap(CalcEngineInterface):
             calculation_quote_pounds = weight if independent_calculation_flag else inputs.get("totalquotepounds")
             intermediate_calcs["calculationQuotePounds"] = calculation_quote_pounds
 
-            weight_class = self._lookup_service.bucketed_lookup(client_id, "weight_class", calculation_quote_pounds, "totalquotepounds")
+            weight_class = str(self._lookup_service.bucketed_lookup(client_id, "weight_class", calculation_quote_pounds, "totalquotepounds"))
             intermediate_calcs["weightClass"] = weight_class
 
             target_margin_key = f"{inputs.get('isroffice')}|{bell_wether_material}"
@@ -287,23 +294,24 @@ class QuoteLineSap(CalcEngineInterface):
             intermediate_calcs["targetMarginAdjustmentKey"] = target_margin_adjustment_key
 
             target_margin_adjustment_info = self._lookup_service.lookup_tm_adjustment(client_id, "tm_adjustments", target_margin_adjustment_key, None)
-            intermediate_calcs["targetMarginAdjustmentInfo"] = TmAdjustmentSchema().dump(target_margin_adjustment_info)
+            if target_margin_adjustment_info is not None:
+                intermediate_calcs["targetMarginAdjustmentInfo"] = TmAdjustmentSchema().dump(target_margin_adjustment_info)
 
             if target_margin_adjustment_info is None:
                 raise BreakError(f"Target margin adjustment '{target_margin_adjustment_key}' not found.")
 
             target_margin_adjustment_weight_classes = {
-                1: target_margin_adjustment_info.weight_class_1,
-                200: target_margin_adjustment_info.weight_class_200,
-                500: target_margin_adjustment_info.weight_class_500,
-                1000: target_margin_adjustment_info.weight_class_1000,
-                2000: target_margin_adjustment_info.weight_class_2000,
-                5000: target_margin_adjustment_info.weight_class_5000,
-                6500: target_margin_adjustment_info.weight_class_6500,
-                10000: target_margin_adjustment_info.weight_class_10000,
-                20000: target_margin_adjustment_info.weight_class_20000,
-                24000: target_margin_adjustment_info.weight_class_24000,
-                40000: target_margin_adjustment_info.weight_class_40000
+                "1": target_margin_adjustment_info.weight_class_1,
+                "200": target_margin_adjustment_info.weight_class_200,
+                "500": target_margin_adjustment_info.weight_class_500,
+                "1000": target_margin_adjustment_info.weight_class_1000,
+                "2000": target_margin_adjustment_info.weight_class_2000,
+                "5000": target_margin_adjustment_info.weight_class_5000,
+                "6500": target_margin_adjustment_info.weight_class_6500,
+                "10000": target_margin_adjustment_info.weight_class_10000,
+                "20000": target_margin_adjustment_info.weight_class_20000,
+                "24000": target_margin_adjustment_info.weight_class_24000,
+                "40000": target_margin_adjustment_info.weight_class_40000
             }
 
             target_margin_adjustment = target_margin_adjustment_weight_classes.get(weight_class, 0.0)
@@ -322,7 +330,8 @@ class QuoteLineSap(CalcEngineInterface):
             intermediate_calcs["clCodeKey"] = cl_code_key
 
             cl_code_info = self._lookup_service.lookup_cl_code(client_id, "cl_codes", cl_code_key, None)
-            intermediate_calcs["clCodeInfo"] = ClCodeSchema().dump(cl_code_info)
+            if cl_code_info is not None:
+                intermediate_calcs["clCodeInfo"] = ClCodeSchema().dump(cl_code_info)
 
             cl_code = "2" if is_test_customer else "3" if cl_code_info is None or cl_code_info.cl_code_value == "" else cl_code_info.cl_code_value
             intermediate_calcs["clCode"] = cl_code
@@ -367,7 +376,7 @@ class QuoteLineSap(CalcEngineInterface):
             intermediate_calcs["custPriceWeightClass40000"] = cust_price_weight_class_40000
 
             ogh_ship_plant = "9999" if inputs.get("rcmapping").casefold() == "SOUTH_SAP".casefold() else ship_plant
-            intermediate_calcs["oghChipPlant"] = ogh_ship_plant
+            intermediate_calcs["oghShipPlant"] = ogh_ship_plant
 
             overhead_group_key = f"{material.upper()}|{ogh_ship_plant}"
             intermediate_calcs["overheadGroupKey"] = overhead_group_key
@@ -376,7 +385,8 @@ class QuoteLineSap(CalcEngineInterface):
             intermediate_calcs["materialSalesOfficeKey"] = material_sales_office_key
 
             material_sales_office_lookup_items = self._lookup_service.lookup_material_sales_office(client_id, "MaterialSalesOfficeLookups", material_sales_office_key, None)
-            intermediate_calcs["materialSalesOfficeLookupItems"] = MaterialSalesOfficeSchema().dump(material_sales_office_lookup_items)
+            if material_sales_office_lookup_items is not None:
+                intermediate_calcs["materialSalesOfficeLookupItems"] = MaterialSalesOfficeSchema().dump(material_sales_office_lookup_items)
 
             price_adjustment_value = 0 if material_sales_office_lookup_items is None else material_sales_office_lookup_items.price_adjustment
             intermediate_calcs["priceAdjustmentValue"] = price_adjustment_value
@@ -397,10 +407,12 @@ class QuoteLineSap(CalcEngineInterface):
             intermediate_calcs["priceAdjustment"] = price_adjustment
 
             packaging_cost_info = None if sap_ind.casefold() == "N".casefold() else self._lookup_service.lookup_packaging_cost(client_id, "packaging_cost_lookups", overhead_group_key, None)
-            intermediate_calcs["packagingCostInfo"] = PackagingCostSchema().dump(packaging_cost_info)
+            if packaging_cost_info is not None:
+                intermediate_calcs["packagingCostInfo"] = PackagingCostSchema().dump(packaging_cost_info)
 
             packaging_cost_info_final = product_info if packaging_cost_info is None else packaging_cost_info
-            intermediate_calcs["packagingCostInfoFinal"] = PackagingCostSchema().dump(packaging_cost_info_final)
+            if packaging_cost_info_final is not None:
+                intermediate_calcs["packagingCostInfoFinal"] = PackagingCostSchema().dump(packaging_cost_info_final)
 
             unit_handling_cost = packaging_cost_info_final.unit_handling_cost if sap_ind.casefold() == "Y".casefold() and packaging_cost_info_final is not None else 0.0
             intermediate_calcs["unitHandlingCost"] = unit_handling_cost
@@ -418,7 +430,8 @@ class QuoteLineSap(CalcEngineInterface):
             intermediate_calcs["productFormKey"] = product_form_key
 
             south_skid_charge_info = self._lookup_service.lookup_south_skid_charge(client_id, "south_skid_charge_lookup", product_form_key, None) if sap_ind.casefold() == "N".casefold() else None
-            intermediate_calcs["southSkidChargeInfo"] = SouthSkidChargeSchema().dump(south_skid_charge_info)
+            if south_skid_charge_info is not None:
+                intermediate_calcs["southSkidChargeInfo"] = SouthSkidChargeSchema().dump(south_skid_charge_info)
 
             south_skid_charge_weight = south_skid_charge_info.weight_per_skid if sap_ind.casefold() == "N".casefold() and south_skid_charge_info is not None else 0.0
             intermediate_calcs["southSkidChargeWeight"] = south_skid_charge_weight
@@ -491,31 +504,36 @@ class QuoteLineSap(CalcEngineInterface):
             intermediate_calcs["sapFreightKey"] = sap_freight_key
 
             sap_freight_info = self._lookup_service.lookup_sap_freight(client_id, "sap_freight_lookups", sap_freight_key, None) if sap_ind.casefold() == "Y".casefold() else None
-            intermediate_calcs["sapFreightInfo"] = SapFreightSchema().dump(sap_freight_info)
+            if sap_freight_info is not None:
+                intermediate_calcs["sapFreightInfo"] = SapFreightSchema().dump(sap_freight_info)
 
             ship_zone_key = f"{customer_id}|{ship_plant}"
             intermediate_calcs["shipZoneKey"] = ship_zone_key
 
             ship_zone_info = self._lookup_service.lookup_ship_zone(client_id, "ship_zone_lookups", ship_zone_key, None) if sap_ind.casefold() == "N".casefold() else None
-            intermediate_calcs["shipZoneInfo"] = ship_zone_info
+            if ship_zone_info is not None:
+                    intermediate_calcs["shipZoneInfo"] = ship_zone_info
 
-            zone = None if sap_ind.casefold() == "Y".casefold() else ship_zone_info.zone if ship_zone_info is not None else "3"
+            zone = "" if sap_ind.casefold() == "Y".casefold() else ship_zone_info.zone if ship_zone_info is not None else "3"
             intermediate_calcs["zone"] = zone
 
             as400_freight_key = f"{ship_plant}|{zone}"
             intermediate_calcs["as400FreightKey"] = as400_freight_key
 
             as400_freight_info = self._lookup_service.lookup_south_freight(client_id, "south_freight_lookups", "2001|1", None) if sap_ind.casefold() == "N".casefold() else None
-            intermediate_calcs["as400FreightInfo"] = SouthFreightSchema().dump(as400_freight_info)
+            if as400_freight_info is not None:
+                intermediate_calcs["as400FreightInfo"] = SouthFreightSchema().dump(as400_freight_info)
 
             freight_info = as400_freight_info if sap_freight_info is None else sap_freight_info
-            intermediate_calcs["freightInfo"] = FreightSchema().dump(freight_info)
+            if freight_info is not None:
+                intermediate_calcs["freightInfo"] = FreightSchema().dump(freight_info)
 
             freight_defaults_key = f"{ship_plant}|{ship_to_state}"
             intermediate_calcs["freightDefaultsKey"] = freight_defaults_key
 
             freight_defaults_info = None if freight_info is not None else self._lookup_service.lookup_freight_default(client_id, "freight_defaults", freight_defaults_key, None) if sap_ind.casefold() == "Y".casefold() else None
-            intermediate_calcs["freightDefaultsInfo"] = FreightDefaultSchema().dump(freight_defaults_info)
+            if freight_defaults_info is not None:
+                intermediate_calcs["freightDefaultsInfo"] = FreightDefaultSchema().dump(freight_defaults_info)
 
             freight_escalation_level = "Level1" if freight_info is not None else "Level3" if freight_defaults_info is None else "Level2"
             intermediate_calcs["freightEscalationLevel"] = freight_escalation_level
@@ -603,6 +621,184 @@ class QuoteLineSap(CalcEngineInterface):
             non_mat_cost_weight_class_40000 = self.calculate_non_mat_cost_for_weight_class(order_cost_weight_class_40000, freight_escalation_level, 0.0 if freight_info is None else freight_info.weight_class_40000, 0.0 if freight_defaults_info is None else freight_defaults_info.default_freight_charge_per_100_pounds, base_raw_freight_charge, minimum_freight_charge, 40000.0)
             intermediate_calcs["nonMatCostWeightClass40000"] = non_mat_cost_weight_class_40000
 
+            total_cost_per_pound = round(replacement_cost_with_mtp + total_non_material_cost, 4)
+            intermediate_calcs["totalCostPerPound"] = total_cost_per_pound
+
+            if inputs.get("rcmapping").casefold() == "SOUTH".casefold() and calculation_quote_pounds <= 500.0:
+                small_order_adder = 25.0 / calculation_quote_pounds
+            else:
+                if inputs.get("multimarket").casefold() == "NORTHEAST" and calculation_quote_pounds <= 1000.0:
+                    small_order_adder = 15.0 / calculation_quote_pounds
+                else:
+                    if inputs.get("rcmapping").casefold() != "SOUTH" and inputs.get("multimarket").casefold() != "NORTHEAST" and calculation_quote_pounds <= 500:
+                        small_order_adder = 50.0 / calculation_quote_pounds
+                    else:
+                        small_order_adder = 0.0
+
+            intermediate_calcs["smallOrderAdder"] = small_order_adder
+
+            rec_price_pp_with_order_adder = round(customer_price_per_pound + total_non_material_cost + small_order_adder, 4)
+            intermediate_calcs["recPricePPWithOrderAdder"] = rec_price_pp_with_order_adder
+
+            cust_service_dollar_adder = inputs.get("dollaradder")
+            intermediate_calcs["custServiceDollarAdder"] = cust_service_dollar_adder
+
+            cust_service_dollar_adder_pp = cust_service_dollar_adder / weight
+            intermediate_calcs["custServiceDollarAdderPP"] = cust_service_dollar_adder_pp
+
+            cust_service_percent_adder = inputs.get("percentadder")
+            intermediate_calcs["custServicePercentAdder"] = cust_service_percent_adder
+
+            rec_price_pp_cust_service_adder = round(rec_price_pp_with_order_adder * (1 + cust_service_percent_adder) + cust_service_dollar_adder_pp, 4)
+            intermediate_calcs["recPricePPCustServiceAdder"] = rec_price_pp_cust_service_adder
+
+            floor_price_key = f"{inputs.get('isroffice')}|{bell_wether_material}"
+            intermediate_calcs["floorPriceKey"] = floor_price_key
+
+            floor_price_info = self._lookup_service.lookup_so_bw_floor_price(client_id, "so_bw_floor_price_lookup", floor_price_key, None)
+            if floor_price_info is not None:
+                intermediate_calcs["floorPriceInfo"] = SoBwFloorPriceSchema().dump(floor_price_info)
+
+            floor_price = floor_price_info.floor_price if floor_price_info is not None else 0.0
+            intermediate_calcs["floorPrice"] = floor_price
+
+            rec_price_pp_with_price_floor = max(rec_price_pp_cust_service_adder, floor_price)
+            intermediate_calcs["recPricePPWithPriceFloor"] = rec_price_pp_with_price_floor
+
+            bw_rating_key = f"{inputs.get('multimarket')}|{bell_wether_material}"
+            intermediate_calcs["bwRatingKey"] = bw_rating_key
+
+            bw_rating_info = self._lookup_service.lookup_bw_rating(client_id, "bw_rating_lookup", bw_rating_key, None)
+            if bw_rating_info is not None:
+                intermediate_calcs["bwRatingInfo"] = BwRatingSchema().dump(bw_rating_info)
+
+            bw_rating = bw_rating_info.bw_rating_value if bw_rating_info is not None else "EXCLUDED"
+            intermediate_calcs["bwRating"] = bw_rating
+
+            bw_rating_adder = bw_rating_info.bw_ratting_adder if bw_rating_info is not None else 0.0
+            intermediate_calcs["bwRatingAdder"] = bw_rating_adder
+
+            rec_price_pp_with_bw_rating_adder = rec_price_pp_with_price_floor * (1 + bw_rating_adder)
+            intermediate_calcs["recommendedPricePerPoundValue"] = rec_price_pp_with_bw_rating_adder
+
+            location_group_lookup_key = inputs.get("rcmapping").upper()
+            intermediate_calcs["locationGroupLookupKey"] = location_group_lookup_key
+
+            location_group_info = self._lookup_service.lookup_location_group(client_id, "location_group_lookup", location_group_lookup_key, None)
+            if location_group_info is not None:
+                intermediate_calcs["locationGroupInfo"] = LocationGroupSchema().dump(location_group_info)
+
+            location_group = location_group_info.location_group_value if location_group_info is not None else "UNKNOWN"
+            intermediate_calcs["locationGroup"] = location_group
+
+            condensed_form = "FR" if form.casefold() == "FLAT".casefold() or form.casefold() == "FLAT".casefold() else form
+            intermediate_calcs["condensedForm"] = condensed_form
+
+            automated_tuning_lookup_key = f"{location_group}|{product}|{condensed_form}"
+            intermediate_calcs["automatedTuningLookupKey"] = automated_tuning_lookup_key
+
+            automated_tuning_info = self._lookup_service.lookup_automated_tuning(client_id, "automated_tuning_lookup", automated_tuning_lookup_key, None)
+            if automated_tuning_info is not None:
+                intermediate_calcs["automatedTuningInfo"] = automated_tuning_info
+
+            salt_value = automated_tuning_info.salt_value if automated_tuning_info is not None else "UNKNOWN"
+            intermediate_calcs["saltValue"] = salt_value
+
+            price_up_active_flag = automated_tuning_info.price_up_active_flag if automated_tuning_info is not None else "FALSE"
+            intermediate_calcs["priceUpActiveFlag"] = price_up_active_flag
+
+            price_up_measurement_level = automated_tuning_info.price_up_measurement_level if automated_tuning_info is not None else ""
+            intermediate_calcs["priceUpMeasurementLevel"] = price_up_measurement_level
+
+            price_up_concentration = automated_tuning_info.price_up_concentration if automated_tuning_info is not None else 0.0
+            intermediate_calcs["priceUpConcentration"] = price_up_concentration
+
+            price_up_magnitude = automated_tuning_info.price_up_magnitude if automated_tuning_info is not None else 0.0
+            intermediate_calcs["priceUpMagnitude"] = price_up_magnitude
+
+            price_up_realization = automated_tuning_info.price_up_realization if automated_tuning_info is not None else 0.0
+            intermediate_calcs["priceUpRealization"] = price_up_realization
+
+            price_up_win_rate_diff = automated_tuning_info.price_up_min_win_rate_diff if automated_tuning_info is not None else 0.0
+            intermediate_calcs["priceUpMinWinRateDiff"] = price_up_win_rate_diff
+
+            price_up_sig_level = automated_tuning_info.price_up_sig_level if automated_tuning_info is not None else 0.0
+            intermediate_calcs["priceUpSigLevel"] = price_up_sig_level
+
+            price_up_power = automated_tuning_info.price_up_power if automated_tuning_info is not None else 0.0
+            intermediate_calcs["priceUpPower"] = price_up_power
+
+            price_up_obs_req = automated_tuning_info.price_up_obs_req if automated_tuning_info is not None else 0.0
+            intermediate_calcs["priceUpObsReq"] = price_up_obs_req
+
+            price_down_active_flag = automated_tuning_info.price_down_active_flag if automated_tuning_info is not None else "FALSE"
+            intermediate_calcs["priceDownActiveFlag"] = price_down_active_flag
+
+            price_down_measurement_level = automated_tuning_info.price_down_measurement_level if automated_tuning_info is not None else ""
+            intermediate_calcs["priceDownMeasurementLevel"] = price_down_measurement_level
+
+            price_down_concentration = automated_tuning_info.price_down_concentration if automated_tuning_info is not None else 0.0
+            intermediate_calcs["priceDownConcentration"] = price_down_concentration
+
+            price_down_magnitude = automated_tuning_info.price_down_magnitude if automated_tuning_info is not None else 0.0
+            intermediate_calcs["priceDownMagnitude"] = price_down_magnitude
+
+            price_down_realization = automated_tuning_info.price_down_realization if automated_tuning_info is not None else 0.0
+            intermediate_calcs["priceDownRealization"] = price_down_realization
+
+            price_down_win_rate_diff = automated_tuning_info.price_down_min_win_rate_diff if automated_tuning_info is not None else 0.0
+            intermediate_calcs["priceDownMinWinRateDiff"] = price_down_win_rate_diff
+
+            price_down_sig_level = automated_tuning_info.price_down_sig_level if automated_tuning_info is not None else 0.0
+            intermediate_calcs["priceDownSigLevel"] = price_down_sig_level
+
+            price_down_power = automated_tuning_info.price_down_power if automated_tuning_info is not None else 0.0
+            intermediate_calcs["priceDownPower"] = price_down_power
+
+            price_down_obs_req = automated_tuning_info.price_down_obs_req if automated_tuning_info is not None else 0.0
+            intermediate_calcs["priceDownObsReq"] = price_down_obs_req
+
+            monday_date = (datetime.datetime.today() - relativedelta(days=-(datetime.datetime.today().weekday() - 1)) if datetime.datetime.today().weekday() != 0 else datetime.datetime.now()).strftime("%Y-%m-%d")
+            intermediate_calcs["mondayDate"] = monday_date
+
+            automated_tuning_hash_values = f"{customer_id}|{inputs.get('isroffice')}|{bell_wether_material}|{monday_date}|{salt_value}"
+            intermediate_calcs["automatedTuningHashValues"] = automated_tuning_hash_values
+
+            partition_value = MiscOperations.get_partition_value(automated_tuning_hash_values)
+            intermediate_calcs["partitionValue"] = partition_value
+
+            control_group_concentration = 1 - (price_up_concentration + price_down_concentration)
+            intermediate_calcs["controlGroupConcentration"] = control_group_concentration
+
+            automated_tuning_test_group_raw = "A" if partition_value <= control_group_concentration else "B" if partition_value <= control_group_concentration + price_up_concentration else "C"
+            intermediate_calcs["automatedTuningTestGroupRaw"] = automated_tuning_test_group_raw
+
+            automated_tuning_test_group = inputs.get("automatedtuninggroupoverride") if inputs.get("automatedtuninggroupoverride") != "" else "A" if is_test_customer else automated_tuning_test_group_raw
+            intermediate_calcs["automatedTuningTestGroup"] = automated_tuning_test_group
+
+            price_up_active_flag_final = price_up_active_flag if inputs.get("automatedtuninggroupoverride") == "" else inputs.get("automatedtuninggroupoverride").upper()
+            intermediate_calcs["priceUpActiveFlagFinal"] = price_up_active_flag_final
+
+            price_down_active_flag_final = price_down_active_flag if inputs.get("automatedtuninggroupoverride") == "" else inputs.get("automatedtuninggroupoverride").upper()
+            intermediate_calcs["priceDownActiveFlagFinal"] = price_down_active_flag_final
+
+            price_up_magnitude_with_flag = price_up_magnitude if price_up_active_flag_final.casefold() == "TRUE".casefold() else 0.0
+            intermediate_calcs["priceUpMagnitudeWithFlag"] = price_up_magnitude_with_flag
+
+            price_down_magnitude_with_flag = price_down_magnitude if price_down_active_flag_final.casefold() == "TRUE".casefold() else 0.0
+            intermediate_calcs["priceDownMagnitudeWithFlag"] = price_down_magnitude_with_flag
+
+            automated_tuning_magnitude = 0.0 if automated_tuning_test_group == "A" else price_up_magnitude_with_flag if automated_tuning_test_group == "B" else price_up_magnitude_with_flag
+            intermediate_calcs["automatedTuningMagnitude"] = automated_tuning_magnitude
+
+            rec_price_with_automated_tuning = rec_price_pp_with_bw_rating_adder * (1 + automated_tuning_magnitude)
+            intermediate_calcs["recPriceWithAutomatedTuning"] = rec_price_with_automated_tuning
+
+            recommended_price_per_pound_value = round(rec_price_with_automated_tuning + price_adjustment, 4)
+            intermediate_calcs["recommendedPricePerPoundValue"] = recommended_price_per_pound_value
+
+            bob = json.dumps(intermediate_calcs, default=str)
+
             outputs.append(CalculationOutputModel("itemNumber", False, "000010"))
             outputs.append(CalculationOutputModel("recommendedPricePerPound", True, "9.801"))
         except BreakError as ex:
@@ -633,14 +829,7 @@ class QuoteLineSap(CalcEngineInterface):
 
     def execute_model(self, request_client_id: str, client_id: str, model: ModelModel, original_payload: dict[str, Any], calculation_id: str, token: str) -> dict[str, Any]:
 
-        # a = self._lookup_service.lookup_customer(client_id, "customers", "0000000000|T09", None)
         # i = self._lookup_service.lookup_op_code("ABM", 100.0, 10.0)
-        # l = self._lookup_service.lookup_so_bw_floor_price(client_id, "so_bw_floor_price_lookup", "1004|100018313", None)
-        # m = self._lookup_service.lookup_bw_rating(client_id, "bw_rating_lookup", "CAL-MEX|160001700", None)
-        # s = self._lookup_service.get_customer_without_office("0000000003")
-        # t = self._lookup_service.get_default_office("T07")
-        # u = self._lookup_service.lookup_automated_tuning(client_id, "automated_tuning_lookup", "CANADA|ALUMINUM|FR", None)
-        # v = self._lookup_service.lookup_location_group(client_id, "location_group_lookup", "CDNEAST", None)
 
         json_output = {}
 

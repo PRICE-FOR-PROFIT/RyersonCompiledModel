@@ -53,7 +53,7 @@ def product_from_row(row: Any) -> ProductModel:
     product.bellwether_material = row["bellwethermaterial"]
     product.bellwether_base_cost = row["bellwetherbasecost"]
     product.dollar_adjustment = row["dollaradjustment"]
-    product.exchangerate = row["exchangerate"]
+    product.exchange_rate = row["exchangerate"]
     product.form = row["form"]
     product.index = row["index"]
     product.market_movement_adder = row["marketmovementadder"]
