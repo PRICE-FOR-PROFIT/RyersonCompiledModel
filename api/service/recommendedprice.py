@@ -239,10 +239,12 @@ class RecommendedPrice(CalcEngineInterface):
             included_properties = [p for p in inputs]
             properties_to_scrub = []
 
+            inputs_copy = inputs.copy()
+
             # Get all the inputs that are null
-            for key, value in inputs.items():
+            for key, value in inputs_copy.items():
                 if value is None:
-                    included_properties.remove(value)
+                    included_properties.remove(key)
                     properties_to_scrub.append(key)
                     del inputs[key]
 

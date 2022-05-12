@@ -244,7 +244,7 @@ class QuoteLineSap(CalcEngineInterface):
             cost_adjustment_percent_raw = test_group_percentages[cost_adjustment_test_group_num - 1]
             intermediate_calcs["costAdjustmentPercentRaw"] = cost_adjustment_percent_raw
 
-            cost_adjustment_percent = cost_adjustment_percent_raw if (cost_plus or material_classification.casefold() == "lm".casefold()) and 25 <= inputs.get("weight") <= 5000 and not is_test_customer else 0.00
+            cost_adjustment_percent = cost_adjustment_percent_raw if (cost_plus or material_classification.casefold() == "lm".casefold()) and 25 <= float(inputs.get("weight")) <= 5000 and not is_test_customer else 0.00
             intermediate_calcs["costAdjustmentPercent"] = cost_adjustment_percent
 
             modeled_cost = modeled_cost_raw * (1 + cost_adjustment_percent)
@@ -355,7 +355,13 @@ class QuoteLineSap(CalcEngineInterface):
             cl_code = "2" if is_test_customer else "3" if cl_code_info is None or cl_code_info.cl_code_value == "" else cl_code_info.cl_code_value
             intermediate_calcs["clCode"] = cl_code
 
-            cl_discount = 0.0 if is_test_customer else 0.05 if cl_code_info is None else cl_code_info.cl_discount if inputs.get("sqpind") == "N" else 0.03 if cl_code_info is None else cl_code_info.cl_discount
+            if is_test_customer:
+                cl_discount = 0.0
+            elif cl_code_info is not None:
+                cl_discount = cl_code_info.cl_discount
+            else:
+                cl_discount = 0.05 if inputs.get("sapind").casefold() == "N".casefold() else 0.03
+
             intermediate_calcs["clDiscount"] = cl_discount
 
             customer_price_per_pound = base_price_per_pound * (1 + cl_discount + inputs.get("dsoadder"))
@@ -1113,10 +1119,12 @@ class QuoteLineSap(CalcEngineInterface):
             included_properties = [p for p in inputs]
             properties_to_scrub = []
 
+            inputs_copy = inputs.copy()
+
             # Get all the inputs that are null
-            for key, value in inputs.items():
+            for key, value in inputs_copy.items():
                 if value is None:
-                    included_properties.remove(value)
+                    included_properties.remove(key)
                     properties_to_scrub.append(key)
                     del inputs[key]
 
