@@ -49,6 +49,7 @@ class QuoteLineSap(CalcEngineInterface):
         self._namespace = configuration.namespace
         self._base_calculation_endpoint = configuration.base_calculation_endpoint
         self._fan_out = eval(configuration.fan_out)
+        self._queued_logger = queued_logger
 
     @staticmethod
     def calculate_recommended_price_per_pound_for_weight_class(rc_mapping: str, multi_market: str, weight_class: float, cust_price_weight_class: float, non_mat_cost_weight_class: float, cust_service_percent_adder: float, cust_service_dollar_adder: float, floor_price: float, automated_tuning_magnitude: float, bw_rating_adder: float, price_adjustment: float) -> str:
@@ -1176,20 +1177,20 @@ class QuoteLineSap(CalcEngineInterface):
             # telemetry track exception
             log_information.error_message = ex
 
-            # if calculation_id != None and not _disable_logging
-            # log the log information
+            if calculation_id != "" and not self._disable_logging:
+                self._queued_logger.log_information(log_information)
 
             raise
         except Exception as ex:
             # telemetry track exception
             log_information.error_message = ex
 
-            # if calculation_id != None and not _disable_logging
-            # log the log information
+            if calculation_id != "" and not self._disable_logging:
+                self._queued_logger.log_information(log_information)
 
             raise
 
-        # if calculation_id != None and not _disable_logging
-        # log the log information
+        if calculation_id != "" and not self._disable_logging:
+            self._queued_logger.log_information(log_information)
 
         return json_output

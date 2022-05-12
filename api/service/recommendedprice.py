@@ -32,6 +32,7 @@ class RecommendedPrice(CalcEngineInterface):
         self._namespace = configuration.namespace
         self._base_calculation_endpoint = configuration.base_calculation_endpoint
         self._fan_out = eval(configuration.fan_out)
+        self._queued_logger = queued_logger
 
         if self._base_calculation_endpoint == "":
             self._base_calculation_endpoint = f"http://ccs.{self._namespace}.svc.cluster.local"
@@ -293,20 +294,20 @@ class RecommendedPrice(CalcEngineInterface):
             # telemetry track exception
             log_information.error_message = ex
 
-            # if calculation_id != None and not _disable_logging
-            # log the log information
+            if calculation_id != "" and not self._disable_logging:
+                self._queued_logger.log_information(log_information)
 
             raise
         except Exception as ex:
             # telemetry track exception
             log_information.error_message = ex
 
-            # if calculation_id != None and not _disable_logging
-            # log the log information
+            if calculation_id != "" and not self._disable_logging:
+                self._queued_logger.log_information(log_information)
 
             raise
 
-        # if calculation_id != None and not _disable_logging
-        # log the log information
+        if calculation_id != "" and not self._disable_logging:
+            self._queued_logger.log_information(log_information)
 
         return json_output
