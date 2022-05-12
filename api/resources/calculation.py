@@ -6,6 +6,7 @@ from flask import request
 from flask_restful import Resource
 from flasgger import swag_from
 from http import HTTPStatus
+from requests.structures import CaseInsensitiveDict
 
 from api.service.modelservice import ModelService
 from config import Config
@@ -37,9 +38,10 @@ def generate_error_wrapper_with_meta(code: int, description: str, calculation_id
 
 
 def transform_input_list_object_array(data: list) -> dict[str, Any]:
-    transformed_data = {}
+    transformed_data = dict()
 
-    for line in data:
+    for line_data in data:
+        line = CaseInsensitiveDict(line_data)
         property_name = line["name"]
         property_value = line["value"]
 
@@ -59,11 +61,13 @@ def transform_input_list_object_array(data: list) -> dict[str, Any]:
     return transformed_data
 
 
-def extract_properties_to_include_in_response(data: dict) -> [str]:
+def extract_properties_to_include_in_response(data: list) -> [str]:
     try:
         properties = []
 
-        for line in data:
+        for line_data in data:
+            line = CaseInsensitiveDict(line_data)
+
             key = line["name"]
             return_in_output = False if line["returninoutput"] is None else line["returninoutput"]
 
@@ -222,16 +226,14 @@ class CalculationApi(Resource):
 
         json_payload = request.get_json()
 
-        calculation_inputs = lower_keys(json_payload)
+        calculation_inputs = CaseInsensitiveDict(json_payload)
 
         if calculation_inputs.get("inputparameters") is not None:
             try:
-                input_data = calculation_inputs["inputparameters"]
+                input_data = calculation_inputs["inputParameters"]
 
                 properties = extract_properties_to_include_in_response(input_data)
-                converted_inputs = lower_keys([transform_input_list_object_array(input_data)])
-
-                bob = json.dumps(converted_inputs)
+                converted_inputs = [transform_input_list_object_array(input_data)]
 
                 calculation_inputs["modelinputs"] = converted_inputs[0]
                 calculation_inputs["includeinresponse"] = properties

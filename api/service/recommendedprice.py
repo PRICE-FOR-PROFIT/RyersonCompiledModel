@@ -5,6 +5,7 @@ from typing import Any
 from uuid import uuid4
 
 import requests as requests
+from requests.structures import CaseInsensitiveDict
 
 from api.exceptions.argumentnullerror import ArgumentNullError
 from api.exceptions.breakerror import BreakError
@@ -74,7 +75,7 @@ class RecommendedPrice(CalcEngineInterface):
 
             raise MaskedError(error_info, json_response.get("error").get("description"))
 
-    def perform_calculations(self, log_information: LogInformationModel, request_client_id: str, client_id: str, inputs: dict[str, Any], calculation_inputs_to_return_in_output: set, calculation_id: str, debug_mode: bool, original_payload: dict, token: str) -> dict[str, Any]:
+    def perform_calculations(self, log_information: LogInformationModel, request_client_id: str, client_id: str, inputs: CaseInsensitiveDict[str, Any], calculation_inputs_to_return_in_output: set, calculation_id: str, debug_mode: bool, original_payload: CaseInsensitiveDict, token: str) -> dict[str, Any]:
         error_message = "errorMessage"
         calculation_results = {}
         intermediate_calcs = {}
@@ -138,8 +139,13 @@ class RecommendedPrice(CalcEngineInterface):
             dso_adder = customer_info.dso_adder
             intermediate_calcs["dsoAdder"] = dso_adder
 
+            model_inputs = original_payload.get("modelinputs")
+
+            if model_inputs is None:
+                raise Exception("ModelInputs are missing from the input.")
+
             # Get the quote lines from the original payload
-            original_quote_lines = original_payload.get("modelinputs").get("quotelines")
+            original_quote_lines = CaseInsensitiveDict(model_inputs).get("quotelines")
 
             if original_quote_lines is None:
                 raise Exception("QuoteLines are missing from the input.")
@@ -210,7 +216,7 @@ class RecommendedPrice(CalcEngineInterface):
 
         return json_output
 
-    def execute_model(self, request_client_id: str, client_id: str, model: ModelModel, original_payload: dict[str, Any], calculation_id: str, token: str) -> dict[str, Any]:
+    def execute_model(self, request_client_id: str, client_id: str, model: ModelModel, original_payload: CaseInsensitiveDict[str, Any], calculation_id: str, token: str) -> dict[str, Any]:
         json_output = {}
 
         log_information = LogInformationModel()
@@ -222,13 +228,13 @@ class RecommendedPrice(CalcEngineInterface):
         log_information.client_id = client_id
         log_information.authorization_id = request_client_id
         log_information.model_version = model.version
-        log_information.original_payload = json.dumps(original_payload)
+        log_information.original_payload = json.dumps(dict(original_payload))
 
         try:
             if original_payload["modelinputs"] is None:
                 raise Exception("Model inputs are null")
 
-            inputs = original_payload["modelinputs"]
+            inputs = CaseInsensitiveDict(original_payload["modelinputs"])
 
             included_properties = [p for p in inputs]
             properties_to_scrub = []
@@ -248,7 +254,7 @@ class RecommendedPrice(CalcEngineInterface):
                     included_properties.remove(model_input.name)
                     properties_to_scrub.append(model_input.name)
 
-            model_inputs = [item.name.lower() for item in model.model_inputs if item.is_required]
+            model_inputs = [item.name for item in model.model_inputs if item.is_required]
             missing_inputs = [item for item in model_inputs if item not in included_properties]
 
             if len(missing_inputs) > 0:
@@ -262,7 +268,7 @@ class RecommendedPrice(CalcEngineInterface):
 
             # Add the defaulted optional attributes to the inputs
             for val in defaulted_optional_inputs:
-                name_key = val.Name.lower()
+                name_key = val.Name
 
                 inputs[name_key] = val.Value
 
@@ -274,7 +280,7 @@ class RecommendedPrice(CalcEngineInterface):
                 if key in calculation_inputs_to_return_in_output or model.debug_mode:
                     json_output[key] = value
 
-            log_information.calculation_inputs = inputs
+            log_information.calculation_inputs = dict(inputs)
 
             calculation_output = self.perform_calculations(log_information, request_client_id, client_id, inputs, calculation_inputs_to_return_in_output, calculation_id, model.debug_mode, original_payload, token)
 

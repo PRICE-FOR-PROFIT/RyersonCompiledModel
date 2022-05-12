@@ -37,7 +37,7 @@ class CalculationHelper:
 
     @staticmethod
     def get_defaulted_optional_inputs_json(model_inputs: list[ParameterModel], calculation_inputs: dict) -> list[CalculationInputModel]:
-        calc_input_names = set(calculation_inputs.keys())
+        calc_input_names = [key.lower() for key in calculation_inputs.keys()]
 
         inputs = [CalculationHelper.get_defaulted_calculation_input(mi) for mi in model_inputs if CalculationHelper.is_defaultable(mi, calc_input_names)]
 
