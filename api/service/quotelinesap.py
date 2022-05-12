@@ -164,7 +164,7 @@ class QuoteLineSap(CalcEngineInterface):
             cost_plus = material_classification.casefold() == "cpl".casefold()
 
             if product_info is None and not cost_plus:
-                raise BreakError("Material not found")
+                raise BreakError("Material not found.")
 
             bell_wether_material = inputs.get("material") if cost_plus else product_info.bellwether_material
             intermediate_calcs["bellWetherMaterial"] = bell_wether_material
@@ -545,7 +545,7 @@ class QuoteLineSap(CalcEngineInterface):
             as400_freight_key = f"{ship_plant}|{zone}"
             intermediate_calcs["as400FreightKey"] = as400_freight_key
 
-            as400_freight_info = self._lookup_service.lookup_south_freight(client_id, "south_freight_lookups", "2001|1", None) if sap_ind.casefold() == "N".casefold() else None
+            as400_freight_info = self._lookup_service.lookup_south_freight(client_id, "south_freight_lookups", as400_freight_key, None) if sap_ind.casefold() == "N".casefold() else None
             if as400_freight_info is not None:
                 intermediate_calcs["as400FreightInfo"] = SouthFreightSchema().dump(as400_freight_info)
 
@@ -1072,16 +1072,16 @@ class QuoteLineSap(CalcEngineInterface):
                 outputs.append(CalculationOutputModel("materialDescription ", False, material_description))
         except BreakError as ex:
             # Track exception
-            error_message = ex
+            error_message = str(ex)
             log_information.intermediate_calculations = intermediate_calcs
         except ArgumentNullError as ex:
             log_information.intermediate_calculations = intermediate_calcs
 
-            raise Exception(f"Error evaluating the function : ex")
+            raise Exception(f"Error evaluating the function : {str(ex)}")
         except DivideByZeroError as ex:
             log_information.intermediate_calculations = intermediate_calcs
 
-            raise Exception(f"Error evaluating the function : ex")
+            raise Exception(f"Error evaluating the function : {str(ex)}")
         except Exception as ex:
             log_information.intermediate_calculations = intermediate_calcs
 

@@ -16,7 +16,7 @@ class CalculationHelper:
         elif parameter.parameter_type.casefold() == "double":
             return float(parameter.default_value)
         elif parameter.parameter_type.casefold() == "bool":
-            return bool(parameter.default_value)
+            return bool(parameter.default_value.casefold() == "true".casefold())
         elif parameter.parameter_type.casefold() == "array":
             return parameter.default_value
         elif parameter.parameter_type.casefold() == "objectarray":

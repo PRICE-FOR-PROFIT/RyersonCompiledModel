@@ -30,12 +30,12 @@ from config import Config
 def customer_from_row(row: Any) -> CustomerModel:
     customer = CustomerModel()
 
-    customer.percent_adder = row["percentadder"]
+    customer.percent_adder = float(row["percentadder"])
     customer.customer_name = row["customername"]
-    customer.dollar_adder = row["dollaradder"]
+    customer.dollar_adder = float(row["dollaradder"])
     customer.dso_adder = row["dsoadder"]
     customer.sap_ind = row["sapind"]
-    customer.dso = row["dso"]
+    customer.dso = float(row["dso"])
     customer.waive_skid = row["waive_skid"]
     customer.customer_sales_office = row["customersalesoffice"]
     customer.isr_office = row["isroffice"]
@@ -51,22 +51,22 @@ def product_from_row(row: Any) -> ProductModel:
     product = ProductModel()
 
     product.bellwether_material = row["bellwethermaterial"]
-    product.bellwether_base_cost = row["bellwetherbasecost"]
-    product.dollar_adjustment = row["dollaradjustment"]
-    product.exchange_rate = row["exchangerate"]
+    product.bellwether_base_cost = float(row["bellwetherbasecost"])
+    product.dollar_adjustment = float(row["dollaradjustment"])
+    product.exchange_rate = float(row["exchangerate"])
     product.form = row["form"]
     product.index = row["index"]
-    product.market_movement_adder = row["marketmovementadder"]
+    product.market_movement_adder = float(row["marketmovementadder"])
     product.material = row["material"]
     product.material_description = row["materialdescription"]
-    product.modeled_cost = row["modeledcost"]
+    product.modeled_cost = float(row["modeledcost"])
     product.product_name = row["product"]
-    product.percent_adjustment = row["percentadjustment"]
-    product.per_ton_packaging_cost = row["pertonpackagingcost"]
-    product.per_ton_stocking_cost = row["pertonstockingcost"]
+    product.percent_adjustment = float(row["percentadjustment"])
+    product.per_ton_packaging_cost = float(row["pertonpackagingcost"])
+    product.per_ton_stocking_cost = float(row["pertonstockingcost"])
     product.rc_mapping = row["rcmapping"]
     product.unique_id = row["uniqueid"]
-    product.unit_handling_cost = row["unithandlingcost"]
+    product.unit_handling_cost = float(row["unithandlingcost"])
 
     return product
 
@@ -76,10 +76,10 @@ def packaging_cost_from_row(row: Any) -> PackagingCostModel:
 
     packaging_cost.overhead_group = row["overheadgroup"]
     packaging_cost.overhead_group_name = row["overheadgroupname"]
-    packaging_cost.per_ton_packaging_cost = row["pertonpackagingcost"]
-    packaging_cost.per_ton_stocking_cost = row["pertonstockingcost"]
+    packaging_cost.per_ton_packaging_cost = float(row["pertonpackagingcost"])
+    packaging_cost.per_ton_stocking_cost = float(row["pertonstockingcost"])
     packaging_cost.unique_id = row["uniqueid"]
-    packaging_cost.unit_handling_cost = row["unithandlingcost"]
+    packaging_cost.unit_handling_cost = float(row["unithandlingcost"])
 
     return packaging_cost
 
@@ -91,17 +91,17 @@ def tm_adjustment_from_row(row: Any) -> TmAdjustmentModel:
     tm_adjustment.multi_market_name = row["multimarket_name"]
     tm_adjustment.product = row["product"]
     tm_adjustment.form = row["form"]
-    tm_adjustment.weight_class_1 = row["weightclass1"]
-    tm_adjustment.weight_class_200 = row["weightclass200"]
-    tm_adjustment.weight_class_500 = row["weightclass500"]
-    tm_adjustment.weight_class_1000 = row["weightclass1000"]
-    tm_adjustment.weight_class_2000 = row["weightclass2000"]
-    tm_adjustment.weight_class_5000 = row["weightclass5000"]
-    tm_adjustment.weight_class_6500 = row["weightclass6500"]
-    tm_adjustment.weight_class_10000 = row["weightclass10000"]
-    tm_adjustment.weight_class_20000 = row["weightclass20000"]
-    tm_adjustment.weight_class_24000 = row["weightclass24000"]
-    tm_adjustment.weight_class_40000 = row["weightclass40000"]
+    tm_adjustment.weight_class_1 = float(row["weightclass1"])
+    tm_adjustment.weight_class_200 = float(row["weightclass200"])
+    tm_adjustment.weight_class_500 = float(row["weightclass500"])
+    tm_adjustment.weight_class_1000 = float(row["weightclass1000"])
+    tm_adjustment.weight_class_2000 = float(row["weightclass2000"])
+    tm_adjustment.weight_class_5000 = float(row["weightclass5000"])
+    tm_adjustment.weight_class_6500 = float(row["weightclass6500"])
+    tm_adjustment.weight_class_10000 = float(row["weightclass10000"])
+    tm_adjustment.weight_class_20000 = float(row["weightclass20000"])
+    tm_adjustment.weight_class_24000 = float(row["weightclass24000"])
+    tm_adjustment.weight_class_40000 = float(row["weightclass40000"])
 
     return tm_adjustment
 
@@ -114,9 +114,9 @@ def material_sales_office_from_row(row: Any) -> MaterialSalesOfficeModel:
     material_sales_office.isr_office = row["isroffice"]
     material_sales_office.start_effective_date = row["starteffectivedate"]
     material_sales_office.end_effective_date = row["endeffectivedate"]
-    material_sales_office.red_margin_threshold = row["redmarginthreshold"]
-    material_sales_office.yellow_margin_threshold = row["yellowmarginthreshold"]
-    material_sales_office.price_adjustment = row["priceadjustment"]
+    material_sales_office.red_margin_threshold = float(row["redmarginthreshold"])
+    material_sales_office.yellow_margin_threshold = float(row["yellowmarginthreshold"])
+    material_sales_office.price_adjustment = float(row["priceadjustment"])
 
     return material_sales_office
 
@@ -127,19 +127,19 @@ def sap_freight_from_row(row: Any) -> SapFreightModel:
     sap_freight.unique_id = row["uniqueid"]
     sap_freight.ship_plant = row["shipplant"]
     sap_freight.zip_code = row["zipcode"]
-    sap_freight.weight_class_0 = row["weightclass0"]
-    sap_freight.weight_class_1 = row["weightclass1"]
-    sap_freight.weight_class_200 = row["weightclass200"]
-    sap_freight.weight_class_500 = row["weightclass500"]
-    sap_freight.weight_class_1000 = row["weightclass1000"]
-    sap_freight.weight_class_2000 = row["weightclass2000"]
-    sap_freight.weight_class_5000 = row["weightclass5000"]
-    sap_freight.weight_class_6500 = row["weightclass6500"]
-    sap_freight.weight_class_10000 = row["weightclass10000"]
-    sap_freight.weight_class_20000 = row["weightclass20000"]
-    sap_freight.weight_class_24000 = row["weightclass24000"]
-    sap_freight.weight_class_40000 = row["weightclass40000"]
-    sap_freight.minimum_freight_charge = row["minimumfreightcharge"]
+    sap_freight.weight_class_0 = float(row["weightclass0"])
+    sap_freight.weight_class_1 = float(row["weightclass1"])
+    sap_freight.weight_class_200 = float(row["weightclass200"])
+    sap_freight.weight_class_500 = float(row["weightclass500"])
+    sap_freight.weight_class_1000 = float(row["weightclass1000"])
+    sap_freight.weight_class_2000 = float(row["weightclass2000"])
+    sap_freight.weight_class_5000 = float(row["weightclass5000"])
+    sap_freight.weight_class_6500 = float(row["weightclass6500"])
+    sap_freight.weight_class_10000 = float( row["weightclass10000"])
+    sap_freight.weight_class_20000 = float(row["weightclass20000"])
+    sap_freight.weight_class_24000 = float(row["weightclass24000"])
+    sap_freight.weight_class_40000 = float(row["weightclass40000"])
+    sap_freight.minimum_freight_charge = float(row["minimumfreightcharge"])
 
     return sap_freight
 
@@ -150,8 +150,8 @@ def south_skid_charge_from_row(row: Any) -> SouthSkidChargeModel:
     south_skid_charge.unique_id = row["uniqueid"]
     south_skid_charge.product = row["product"]
     south_skid_charge.form = row["form"]
-    south_skid_charge.weight_per_skid = row["weightperskid"]
-    south_skid_charge.skid_charge = row["skidcharge"]
+    south_skid_charge.weight_per_skid = float(row["weightperskid"])
+    south_skid_charge.skid_charge = float(row["skidcharge"])
 
     return south_skid_charge
 
@@ -163,11 +163,11 @@ def op_code_from_row(row: Any) -> OpCodeModel:
     op_code.op_code_value = row["opcode"]
     op_code.cutting_operation = row["cuttingoperation"]
     op_code.fab_indicator = row["fabindicator"]
-    op_code.net_weight_low = row["netweightlow"]
-    op_code.net_weight_high = row["netweighthigh"]
-    op_code.pieces_weight_low = row["pieceweightlow"]
-    op_code.pieces_weight_high = row["pieceweighthigh"]
-    op_code.long_base_pull_time = row["longbasepulltime"]
+    op_code.net_weight_low = float(row["netweightlow"])
+    op_code.net_weight_high = float(row["netweighthigh"])
+    op_code.pieces_weight_low = float(row["pieceweightlow"])
+    op_code.pieces_weight_high = float(row["pieceweighthigh"])
+    op_code.long_base_pull_time = float(row["longbasepulltime"])
     op_code.op_code_type = row["opcodetype"]
 
     return op_code
@@ -213,7 +213,7 @@ def so_bw_floor_price_from_row(row: Any) -> SoBwFloorPriceModel:
     so_bw_floor_price.unique_id = row["uniqueid"]
     so_bw_floor_price.isr_office = row["isroffice"]
     so_bw_floor_price.bellwether_material = row["bellwethermaterial"]
-    so_bw_floor_price.floor_price = row["floorprice"]
+    so_bw_floor_price.floor_price = float(row["floorprice"])
 
     return so_bw_floor_price
 
@@ -225,7 +225,7 @@ def bw_rating_from_row(row: Any) -> BwRatingModel:
     bw_rating.multi_market_name = row["multimarketname"]
     bw_rating.bellwether_material = row["bellwethermaterial"]
     bw_rating.bw_rating_value = row["bwrating"]
-    bw_rating.bw_ratting_adder = row["bwratingadder"]
+    bw_rating.bw_ratting_adder = float(row["bwratingadder"])
 
     return bw_rating
 
@@ -236,8 +236,8 @@ def freight_default_from_row(row: Any) -> FreightDefaultModel:
     freight_default.unique_id = row["uniqueid"]
     freight_default.ship_plant = row["shipplant"]
     freight_default.state = row["state"]
-    freight_default.default_freight_charge_per_100_pounds = row["defaultfreightchargeper100pounds"]
-    freight_default.default_minimum_freight_charge = row["defaultminimumfreightcharge"]
+    freight_default.default_freight_charge_per_100_pounds = float(row["defaultfreightchargeper100pounds"])
+    freight_default.default_minimum_freight_charge = float(row["defaultminimumfreightcharge"])
 
     return freight_default
 
@@ -248,7 +248,7 @@ def target_margin_from_row(row: Any) -> TargetMarginModel:
     target_margin.unique_id = row["uniqueid"]
     target_margin.isr_office = row["isroffice"]
     target_margin.bell_wether_material = row["bellwethermaterial"]
-    target_margin.target_margin_value = row["targetmargin"]
+    target_margin.target_margin_value = float(row["targetmargin"])
 
     return target_margin
 
@@ -262,7 +262,7 @@ def cl_code_from_row(row: Any) -> ClCodeModel:
     cl_code.product = row["product"]
     cl_code.cl_code_value = row["clcode"]
     cl_code.form = row["form"]
-    cl_code.cl_discount = row["cldiscount"]
+    cl_code.cl_discount = float(row["cldiscount"])
 
     return cl_code
 
@@ -274,8 +274,8 @@ def ido_from_row(row: Any) -> IdoModel:
     ido.stock_plant = row["stockplant"]
     ido.ship_plant = row["shipplant"]
     ido.ido_per_pound = row["idoperpound"]
-    ido.ido_max = row["idomax"]
-    ido.ido_min = row["idomin"]
+    ido.ido_max = float(row["idomax"])
+    ido.ido_min = float(row["idomin"])
 
     return ido
 
@@ -288,22 +288,22 @@ def automated_tuning_from_row(row: Any) -> AutomatedTuningModel:
     automated_tuning.location_group = row["locationgroup"]
     automated_tuning.price_down_active_flag = row["pricedownactiveflag"]
     automated_tuning.price_down_measurement_level = row["pricedownmeasurementlevel"]
-    automated_tuning.price_down_concentration = row["pricedownconcentration"]
-    automated_tuning.price_down_magnitude = row["pricedownmagnitude"]
-    automated_tuning.price_down_min_win_rate_diff = row["pricedownminwinratediff"]
-    automated_tuning.price_down_obs_req = row["pricedownobsreq"]
-    automated_tuning.price_down_power = row["pricedownpower"]
-    automated_tuning.price_down_realization = row["pricedownrealization"]
-    automated_tuning.price_down_sig_level = row["pricedownsiglevel"]
+    automated_tuning.price_down_concentration = float(row["pricedownconcentration"])
+    automated_tuning.price_down_magnitude = float(row["pricedownmagnitude"])
+    automated_tuning.price_down_min_win_rate_diff = float(row["pricedownminwinratediff"])
+    automated_tuning.price_down_obs_req = int(row["pricedownobsreq"])
+    automated_tuning.price_down_power = float(row["pricedownpower"])
+    automated_tuning.price_down_realization = float(row["pricedownrealization"])
+    automated_tuning.price_down_sig_level = float(row["pricedownsiglevel"])
     automated_tuning.price_up_active_flag = row["priceupactiveflag"]
     automated_tuning.price_up_measurement_level = row["priceupmeasurementlevel"]
-    automated_tuning.price_up_concentration = row["priceupconcentration"]
-    automated_tuning.price_up_magnitude = row["priceupmagnitude"]
-    automated_tuning.price_up_min_win_rate_diff = row["priceupminwinratediff"]
-    automated_tuning.price_up_obs_req = row["priceupobsreq"]
-    automated_tuning.price_up_power = row["priceuppower"]
-    automated_tuning.price_up_realization = row["priceuprealization"]
-    automated_tuning.price_up_sig_level = row["priceupsiglevel"]
+    automated_tuning.price_up_concentration = float(row["priceupconcentration"])
+    automated_tuning.price_up_magnitude = float(row["priceupmagnitude"])
+    automated_tuning.price_up_min_win_rate_diff = float(row["priceupminwinratediff"])
+    automated_tuning.price_up_obs_req = int(row["priceupobsreq"])
+    automated_tuning.price_up_power = float(row["priceuppower"])
+    automated_tuning.price_up_realization = float(row["priceuprealization"])
+    automated_tuning.price_up_sig_level = float(row["priceupsiglevel"])
     automated_tuning.product = row["product"]
     automated_tuning.salt_value = row["saltvalue"]
 
@@ -314,13 +314,13 @@ def cost_adjustment_from_row(row: Any) -> CostAdjustmentModel:
     cost_adjustment = CostAdjustmentModel()
 
     cost_adjustment.product = row["product"]
-    cost_adjustment.cost = row["cost"]
+    cost_adjustment.cost = float(row["cost"])
     cost_adjustment.form = row["form"]
     cost_adjustment.material = row["material"]
     cost_adjustment.material_classification = row["materialclassification"]
     cost_adjustment.material_description = row["materialdescription"]
     cost_adjustment.stock_plant = row["stockplant"]
-    cost_adjustment.target_margin = row["targetmargin"]
+    cost_adjustment.target_margin = float(row["targetmargin"])
     cost_adjustment.unique_id = row["uniqueid"]
 
     return cost_adjustment
